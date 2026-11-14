@@ -27,10 +27,37 @@
         <p class="tagline">L'ennemi observe votre façon de jouer. À chaque victoire, il revient plus malin.</p>
         <div class="menu-actions">
           <button id="btn-play" class="primary"><span>Jouer</span><span aria-hidden="true">→</span></button>
+          <button id="btn-board"><span>Classement</span><span aria-hidden="true">›</span></button>
           <button id="btn-settings"><span>Paramètres</span><span aria-hidden="true">›</span></button>
         </div>
+        <p id="account-line" class="account-line"></p>
       </div>
       <aside id="menu-dossier" class="intel dossier"></aside>
+    </section>
+
+    <!-- COMPTE -->
+    <section id="account" class="screen">
+      <header class="page-head"><h2>Compte</h2><p class="lead">Connectez-vous pour apparaître au classement et retrouver votre IA sur tous vos appareils.</p></header>
+      <form id="auth-form" class="panel auth">
+        <div class="tabs"><button type="button" id="tab-login" class="tab active">Connexion</button><button type="button" id="tab-signup" class="tab">Inscription</button></div>
+        <label class="field signup-only" hidden><span>Pseudo (public)</span><input id="auth-name" maxlength="16" autocomplete="nickname"></label>
+        <label class="field"><span>Email</span><input id="auth-email" type="email" autocomplete="email" required></label>
+        <label class="field"><span>Mot de passe</span><input id="auth-pass" type="password" autocomplete="current-password" required></label>
+        <label class="consent signup-only" hidden><input type="checkbox" class="switch" id="auth-consent"><span>J'accepte que mon pseudo, mon score et le profil de mon IA soient enregistrés en ligne. Seuls mon pseudo et mon score sont publics. Je peux supprimer mes données à tout moment.</span></label>
+        <p id="auth-error" class="error" role="alert"></p>
+        <button type="submit" id="auth-submit" class="primary">Se connecter</button>
+        <button type="button" id="auth-reset" class="link login-only">Mot de passe oublié ?</button>
+      </form>
+      <div class="maps-actions"><button type="button" id="auth-back">Jouer en invité</button></div>
+    </section>
+
+    <!-- CLASSEMENT -->
+    <section id="board" class="screen">
+      <header class="page-head"><h2>Classement</h2><p class="lead">Les joueurs ayant tenu le plus de vagues, carte par carte.</p></header>
+      <div id="board-tabs" class="tabs"></div>
+      <div id="board-body" class="panel board"></div>
+      <p class="muted center">Les scores ne sont pas vérifiés par le serveur.</p>
+      <div class="maps-actions"><button type="button" id="board-back">← Retour au menu</button></div>
     </section>
 
     <!-- CARTES -->
@@ -124,7 +151,7 @@
   </main>
 
   <script>
-    ['settings', 'ai', 'game', 'main'].forEach(function (f) {
+    ['settings', 'ai', 'game', 'online', 'main'].forEach(function (f) {
       document.write('<script src="js/' + f + '.js?v=' + __v + '"><\/script>');
     });
   </script>

@@ -274,3 +274,29 @@ output { min-width: 2.2em; text-align: right; color: var(--gold); font-variant-n
 .menu-actions button span:last-child { transition: transform 0.15s; }
 .menu-actions button:hover span:last-child { transform: translateX(4px); }
 @media (prefers-reduced-motion: reduce) { .menu-actions button span:last-child { transition: none; } }
+
+/* ===== Compte et classement ===== */
+[hidden] { display: none !important; }
+.center { text-align: center; }
+.account-line { margin: 18px 0 0; color: var(--muted); font-size: 0.9rem; }
+button.link { background: none; border: 0; padding: 0; color: var(--gold); text-decoration: underline; cursor: pointer; font: inherit; }
+button.link:hover:not(:disabled) { border: 0; color: var(--bone); }
+#account { max-width: 460px; margin: 0 auto; width: 100%; }
+.auth { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+.field input { font: inherit; color: var(--bone); background: #0f1b1e; border: 1px solid var(--edge); border-radius: var(--radius); padding: 10px 12px; }
+.field input:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.consent { display: flex; gap: 12px; align-items: flex-start; font-size: 0.82rem; color: var(--muted); }
+.error { min-height: 1.2em; margin: 0; color: #f0a58f; font-size: 0.88rem; }
+.auth .link { align-self: center; }
+.tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.tab { padding: 8px 16px; background: transparent; }
+.tab.active { background: var(--gold); color: #1d1606; border-color: var(--gold); font-weight: 700; }
+#board { max-width: 640px; margin: 0 auto; width: 100%; }
+.board { padding: 8px 20px; min-height: 120px; color: var(--muted); }
+.rank-row { display: grid; grid-template-columns: 2.5em 1fr auto; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #22353a; color: var(--bone); }
+.rank-row:last-child { border-bottom: 0; }
+.rank-row .pos { font-family: var(--display); color: var(--muted); }
+.rank-row:nth-child(-n+3) .pos { color: var(--gold); font-size: 1.15rem; }
+.rank-row .val { font-family: var(--display); color: var(--gold); }
+.rank-row.me { background: rgba(226, 176, 74, 0.08); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }

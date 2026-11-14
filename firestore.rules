@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Profil public minimal d'un joueur (lecture : lui seul).
+    match /users/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.matches('^[A-Za-z0-9_]{3,16}$')
+        && request.resource.data.createdAt == request.time;
+    }
+
+    // Unicité des pseudos (clé = pseudo en minuscules).
+    match /usernames/{name} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && name.matches('^[a-z0-9_]{3,16}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // Profil de l'IA : privé, taille limitée.
+    match /profiles/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() < 150000
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    // Classement : un meilleur score par joueur et par carte, qui ne peut que progresser.
+    match /maps/{map}/scores/{uid} {
+      allow read: if true;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && map in ['vallee', 'serpentin', 'spirale']
+        && request.resource.data.keys().hasOnly(['name', 'wave', 'updatedAt'])
+        && request.resource.data.wave is int
+        && request.resource.data.wave >= 1 && request.resource.data.wave <= 200
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.name == get(/databases/$(database)/documents/users/$(uid)).data.name;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'wave', 'updatedAt'])
+        && request.resource.data.wave is int
+        && request.resource.data.wave > resource.data.wave && request.resource.data.wave <= 200
+        && request.resource.data.updatedAt == request.time
+        && request.time > resource.data.updatedAt + duration.value(60, 's')
+        && request.resource.data.name == resource.data.name;
+    }
+  }
+}

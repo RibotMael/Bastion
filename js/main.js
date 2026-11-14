@@ -123,6 +123,7 @@ function togglePause() {
   }
 }
 
+$('btn-board').onclick = () => openBoard();
 $('btn-play').onclick = () => { buildMapCards(); show('maps'); };
 $('btn-maps-back').onclick = () => show('menu');
 $('btn-wave').onclick = () => game.launchWave();
@@ -191,6 +192,93 @@ $('btn-reset').onclick = () => {
 };
 
 refreshMenuStats();
+
+// ----- En ligne : compte, classement -----
+function renderAccount() {
+  const box = $('account-line');
+  box.innerHTML = '';
+  const b = document.createElement('button');
+  b.className = 'link';
+  if (typeof Online !== 'undefined' && Online.user) {
+    box.append(`Connecté : ${Online.name || Online.user.email} · `);
+    b.textContent = 'Déconnexion';
+    b.onclick = async () => { await Online.signOut(); };
+  } else {
+    box.append('Mode invité · ');
+    b.textContent = 'Se connecter';
+    b.onclick = () => { setAuthMode('login'); show('account'); };
+  }
+  box.append(b);
+}
+
+let authMode = 'login';
+function setAuthMode(mode) {
+  authMode = mode;
+  $('tab-login').classList.toggle('active', mode === 'login');
+  $('tab-signup').classList.toggle('active', mode === 'signup');
+  document.querySelectorAll('#account .signup-only').forEach(e => { e.hidden = mode !== 'signup'; });
+  document.querySelectorAll('#account .login-only').forEach(e => { e.hidden = mode !== 'login'; });
+  $('auth-submit').textContent = mode === 'login' ? 'Se connecter' : 'Créer mon compte';
+  $('auth-pass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  $('auth-error').textContent = '';
+}
+$('tab-login').onclick = () => setAuthMode('login');
+$('tab-signup').onclick = () => setAuthMode('signup');
+$('auth-back').onclick = () => show('menu');
+$('auth-reset').onclick = async () => {
+  const err = $('auth-error'), email = $('auth-email').value.trim();
+  if (!email) { err.textContent = "Saisissez votre email d'abord."; return; }
+  try { await Online.init(); await Online.resetPassword(email); err.textContent = 'Email de réinitialisation envoyé (pensez aux spams).'; }
+  catch (ex) { err.textContent = Online.message(ex); }
+};
+$('auth-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const err = $('auth-error'), btn = $('auth-submit');
+  err.textContent = ''; btn.disabled = true;
+  try {
+    await Online.init();
+    const email = $('auth-email').value.trim(), pass = $('auth-pass').value;
+    if (authMode === 'signup') {
+      if (!$('auth-consent').checked) throw new Error("Cochez l'acceptation pour créer un compte.");
+      await Online.signUp($('auth-name').value.trim(), email, pass);
+    } else await Online.signIn(email, pass);
+    refreshMenuStats(); renderAccount(); show('menu');
+  } catch (ex) { err.textContent = Online.message(ex); }
+  finally { btn.disabled = false; }
+};
+
+let boardMap = 'vallee';
+async function openBoard(id) {
+  if (id) boardMap = id;
+  show('board');
+  const tabs = $('board-tabs'), body = $('board-body');
+  tabs.innerHTML = '';
+  for (const [k, mp] of Object.entries(MAPS)) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab' + (k === boardMap ? ' active' : ''); b.textContent = mp.name;
+    b.onclick = () => openBoard(k);
+    tabs.append(b);
+  }
+  body.textContent = 'Chargement…';
+  try {
+    await Online.init();
+    const rows = await Online.leaderboard(boardMap);
+    body.innerHTML = '';
+    if (!rows.length) { body.textContent = 'Aucun score pour le moment. Soyez le premier !'; return; }
+    rows.forEach((r, i) => {
+      const row = document.createElement('div');
+      row.className = 'rank-row' + (Online.user && r.uid === Online.user.uid ? ' me' : '');
+      const pos = document.createElement('span'); pos.className = 'pos'; pos.textContent = i + 1;
+      const who = document.createElement('span'); who.className = 'who'; who.textContent = r.name;
+      const val = document.createElement('span'); val.className = 'val'; val.textContent = 'vague ' + r.wave;
+      row.append(pos, who, val); body.append(row);
+    });
+  } catch (ex) { body.textContent = Online.message(ex); }
+}
+$('board-back').onclick = () => show('menu');
+
+renderAccount();
+if (typeof Online !== 'undefined') { Online.onChange(() => { renderAccount(); refreshMenuStats(); }); Online.init().catch(() => {}); }
 
 // L'œil de l'adversaire suit le curseur sur le menu.
 const pupil = $('eye-pupil');

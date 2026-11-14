@@ -453,6 +453,7 @@ class Game {
     Profile.data.history = Profile.data.history.slice(-20);
     Profile.data.placements = Profile.data.placements.slice(-300);
     Profile.save();
+    if (typeof Online !== 'undefined' && Online.user) { Online.submit(this.mapId, survived); Online.pushProfile(); }
 
     this.updateHud();
     this.onEnd(report, { survived, best: Profile.data.records[this.mapId], newRecord: survived > prevRec, map: MAPS[this.mapId].name });
