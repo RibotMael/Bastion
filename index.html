@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bastion – Tower Defense adaptatif</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
+  <script>
+    // Anti-cache : force le navigateur à recharger CSS et JS à chaque ouverture (à retirer pour une version finale).
+    var __v = Date.now();
+    document.write('<link rel="stylesheet" href="css/style.css?v=' + __v + '">');
+  </script>
+</head>
+<body>
+  <svg class="bg-road" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M-60 760 C 260 760 300 330 620 330 S 920 820 1220 640 S 1500 230 1680 300" fill="none" stroke="#b9a068" stroke-width="84" opacity="0.06"/>
+    <path d="M-60 760 C 260 760 300 330 620 330 S 920 820 1220 640 S 1500 230 1680 300" fill="none" stroke="#b9a068" stroke-width="3" stroke-dasharray="14 18" opacity="0.16"/>
+  </svg>
+  <main id="app">
+
+    <!-- MENU -->
+    <section id="menu" class="screen active">
+      <div class="hero">
+        <h1 aria-label="Bastion">Basti<svg class="o-eye" viewBox="0 0 64 60" aria-hidden="true"><ellipse cx="32" cy="30" rx="30" ry="28" fill="#e2b04a"/><ellipse cx="32" cy="30" rx="16" ry="17.5" fill="#1a0f0c"/><circle class="iris" cx="32" cy="30" r="11" fill="#e4572e"/><circle id="eye-pupil" cx="32" cy="30" r="5" fill="#0d1619"/></svg>n</h1>
+        <p class="tagline">L'ennemi observe votre façon de jouer. À chaque victoire, il revient plus malin.</p>
+        <div class="menu-actions">
+          <button id="btn-play" class="primary"><span>Jouer</span><span aria-hidden="true">→</span></button>
+          <button id="btn-settings"><span>Paramètres</span><span aria-hidden="true">›</span></button>
+        </div>
+      </div>
+      <aside id="menu-dossier" class="intel dossier"></aside>
+    </section>
+
+    <!-- CARTES -->
+    <section id="maps" class="screen">
+      <header class="page-head">
+        <h2>Choisir une carte</h2>
+        <p class="lead">Chaque carte garde son propre record de vagues.</p>
+      </header>
+      <div id="map-list" class="maps"></div>
+      <div class="maps-actions"><button type="button" id="btn-maps-back">← Retour au menu</button></div>
+    </section>
+
+    <!-- PARAMÈTRES -->
+    <section id="settings" class="screen">
+      <header class="page-head"><h2>Paramètres</h2></header>
+      <form class="settings-form" onsubmit="return false">
+        <h3 class="group-title">Partie</h3>
+        <div class="panel">
+          <label class="setting">
+            <span class="s-text"><span class="s-name">Vitesse par défaut</span><span class="s-desc">Modifiable en jeu avec la touche F.</span></span>
+            <select id="set-speed">
+              <option value="1">Normale (×1)</option>
+              <option value="2">Rapide (×2)</option>
+              <option value="4">Très rapide (×4)</option>
+              <option value="8">Turbo (×8)</option>
+            </select>
+          </label>
+        </div>
+
+        <h3 class="group-title">Affichage</h3>
+        <div class="panel">
+          <label class="setting"><span class="s-text"><span class="s-name">Grille</span><span class="s-desc">Quadrillage visible sur le plateau.</span></span><input type="checkbox" class="switch" id="set-grid"></label>
+          <label class="setting"><span class="s-text"><span class="s-name">Portée des tours</span><span class="s-desc">Cercle de portée au survol d'une tour.</span></span><input type="checkbox" class="switch" id="set-range"></label>
+          <label class="setting"><span class="s-text"><span class="s-name">Conseils de l'analyse</span><span class="s-desc">Pistes d'amélioration après chaque vague.</span></span><input type="checkbox" class="switch" id="set-advice"></label>
+        </div>
+
+        <h3 class="group-title">Audio</h3>
+        <div class="panel">
+          <label class="setting">
+            <span class="s-text"><span class="s-name">Volume</span><span class="s-desc">Les effets sonores arrivent bientôt.</span></span>
+            <span class="range-wrap"><input type="range" id="set-volume" min="0" max="100"><output id="vol-out">70</output></span>
+          </label>
+        </div>
+
+        <h3 class="group-title">Données</h3>
+        <div class="panel">
+          <div class="setting">
+            <span class="s-text"><span class="s-name">Mémoire de l'IA</span><span class="s-desc">Efface profil, records et fiches du bestiaire.</span></span>
+            <button type="button" id="btn-reset" class="danger">Effacer</button>
+          </div>
+        </div>
+
+        <div class="form-actions"><button type="button" id="btn-back" class="primary">Retour</button></div>
+      </form>
+    </section>
+
+    <!-- PARTIE -->
+    <section id="game" class="screen">
+      <header class="hud">
+        <span>Vies <strong id="hud-lives">20</strong></span>
+        <span>Or <strong id="hud-gold">100</strong></span>
+        <span>Vague <strong id="hud-wave">1</strong></span>
+        <span>Record <strong id="hud-best">0</strong></span>
+        <span class="spacer"></span>
+        <button id="btn-wave" class="primary">Lancer la vague</button>
+        <button id="btn-heat" title="Carte de chaleur (H)">Chaleur</button>
+        <button id="btn-bestiary">Bestiaire</button>
+        <button id="btn-speed" title="Vitesse (F)">×1</button>
+        <button id="btn-pause">Pause</button>
+      </header>
+
+      <div class="board">
+        <canvas id="canvas" width="768" height="480"></canvas>
+        <div id="overlay" class="overlay hidden">
+          <h2 id="overlay-title"></h2>
+          <p id="overlay-text"></p>
+          <div id="overlay-report" class="report hidden"></div>
+          <div id="overlay-buttons" class="stack"></div>
+        </div>
+      </div>
+
+      <footer id="toolbar" class="toolbar"></footer>
+
+      <aside class="side">
+        <div id="next" class="next"></div>
+        <section id="tcard" class="tcard"></section>
+        <section id="intel" class="intel hidden"></section>
+      </aside>
+    </section>
+
+  </main>
+
+  <script>
+    ['settings', 'ai', 'game', 'main'].forEach(function (f) {
+      document.write('<script src="js/' + f + '.js?v=' + __v + '"><\/script>');
+    });
+  </script>
+</body>
+</html>
