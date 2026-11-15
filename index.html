@@ -18,6 +18,7 @@
     <path d="M-60 760 C 260 760 300 330 620 330 S 920 820 1220 640 S 1500 230 1680 300" fill="none" stroke="#b9a068" stroke-width="84" opacity="0.06"/>
     <path d="M-60 760 C 260 760 300 330 620 330 S 920 820 1220 640 S 1500 230 1680 300" fill="none" stroke="#b9a068" stroke-width="3" stroke-dasharray="14 18" opacity="0.16"/>
   </svg>
+  <div class="topbar"><div id="account-line" class="account-chip"></div></div>
   <main id="app">
 
     <!-- MENU -->
@@ -26,11 +27,11 @@
         <h1 aria-label="Bastion">Basti<svg class="o-eye" viewBox="0 0 64 60" aria-hidden="true"><ellipse cx="32" cy="30" rx="30" ry="28" fill="#e2b04a"/><ellipse cx="32" cy="30" rx="16" ry="17.5" fill="#1a0f0c"/><circle class="iris" cx="32" cy="30" r="11" fill="#e4572e"/><circle id="eye-pupil" cx="32" cy="30" r="5" fill="#0d1619"/></svg>n</h1>
         <p class="tagline">L'ennemi observe votre façon de jouer. À chaque victoire, il revient plus malin.</p>
         <div class="menu-actions">
-          <button id="btn-play" class="primary"><span>Jouer</span><span aria-hidden="true">→</span></button>
-          <button id="btn-board"><span>Classement</span><span aria-hidden="true">›</span></button>
-          <button id="btn-settings"><span>Paramètres</span><span aria-hidden="true">›</span></button>
+          <button id="btn-play" class="primary"><span class="lbl"><b>Jouer</b><small>Choisir une carte</small></span><span aria-hidden="true">→</span></button>
+          <button id="btn-board"><span class="lbl"><b>Classement</b><small>Les meilleurs joueurs par carte</small></span><span aria-hidden="true">›</span></button>
+          <button id="btn-profile"><span class="lbl"><b>Profil</b><small>Statistiques et compte</small></span><span aria-hidden="true">›</span></button>
+          <button id="btn-settings"><span class="lbl"><b>Paramètres</b><small>Vitesse, affichage, données</small></span><span aria-hidden="true">›</span></button>
         </div>
-        <p id="account-line" class="account-line"></p>
       </div>
       <aside id="menu-dossier" class="intel dossier"></aside>
     </section>
@@ -51,12 +52,91 @@
       <div class="maps-actions"><button type="button" id="auth-back">Jouer en invité</button></div>
     </section>
 
+    <!-- PROFIL -->
+    <section id="profile" class="screen">
+      <div class="pf-head"><span id="pf-avatar" class="avatar big"></span><div><h2 id="pf-title">Profil</h2><p id="profile-sub" class="lead"></p></div></div>
+      <div class="tabs"><button type="button" id="ptab-stats" class="tab active">Statistiques</button><button type="button" id="ptab-account" class="tab">Compte</button></div>
+
+      <div id="pane-stats" class="pane">
+        <div id="pf-tiles" class="tiles four"></div>
+        <div class="pane-cols">
+          <div>
+            <h3 class="group-title">Tours construites</h3><div class="panel bars" id="pf-bars"></div>
+            <h3 class="group-title">Records par carte</h3><div class="panel" id="records-panel"></div>
+          </div>
+          <div><h3 class="group-title">Dernières parties</h3><div class="panel" id="history-panel"></div></div>
+        </div>
+      </div>
+
+      <div id="pane-account" class="pane narrow" hidden>
+        <div id="pf-guest" class="panel pf-box" hidden>
+          <p>Connectez-vous pour apparaître au classement, retrouver votre IA sur tous vos appareils et gérer votre compte.</p>
+          <button type="button" id="pf-login" class="primary">Se connecter</button>
+        </div>
+        <div class="online-only" hidden>
+          <p id="pf-msg" class="error" role="status"></p>
+          <h3 class="group-title">Informations de connexion</h3>
+          <div class="panel">
+            <div class="acct-row" data-edit="name">
+              <div><span class="acct-label">Pseudo public</span><span class="acct-value" id="acv-name"></span><span class="acct-help">Affiché dans le classement.</span></div>
+              <button type="button" class="edit-btn">Modifier</button>
+              <form class="editor" hidden>
+                <label class="field"><span>Nouveau pseudo (3 à 16 caractères : lettres, chiffres, _)</span><input name="v" maxlength="16" autocomplete="nickname"></label>
+                <p class="error msg"></p>
+                <div class="row-actions"><button class="primary">Enregistrer</button><button type="button" class="cancel">Annuler</button></div>
+              </form>
+            </div>
+            <div class="acct-row" data-edit="email">
+              <div><span class="acct-label">Adresse email</span><span class="acct-value" id="acv-email"></span><span class="acct-help">Sert à vous connecter.</span></div>
+              <button type="button" class="edit-btn">Modifier</button>
+              <form class="editor" hidden>
+                <p class="hint">Un lien de confirmation sera envoyé à la nouvelle adresse. Votre email ne change qu'après avoir cliqué dessus.</p>
+                <label class="field"><span>Nouvelle adresse email</span><input name="v" type="email" autocomplete="email"></label>
+                <label class="field"><span>Votre mot de passe actuel (pour confirmer que c'est bien vous)</span><input name="current" type="password" autocomplete="current-password"></label>
+                <p class="error msg"></p>
+                <div class="row-actions"><button class="primary">Envoyer le lien de confirmation</button><button type="button" class="cancel">Annuler</button></div>
+              </form>
+            </div>
+            <div class="acct-row" data-edit="password">
+              <div><span class="acct-label">Mot de passe</span><span class="acct-value">••••••••</span><span class="acct-help">6 caractères minimum.</span></div>
+              <button type="button" class="edit-btn">Modifier</button>
+              <form class="editor" hidden>
+                <label class="field"><span>Mot de passe actuel</span><input name="current" type="password" autocomplete="current-password"></label>
+                <label class="field"><span>Nouveau mot de passe</span><input name="v" type="password" autocomplete="new-password"></label>
+                <label class="field"><span>Confirmer le nouveau mot de passe</span><input name="confirm" type="password" autocomplete="new-password"></label>
+                <p class="error msg"></p>
+                <div class="row-actions"><button class="primary">Changer le mot de passe</button><button type="button" class="cancel">Annuler</button></div>
+              </form>
+            </div>
+          </div>
+          <h3 class="group-title">Vos données</h3>
+          <div class="panel">
+            <div class="acct-row">
+              <div><span class="acct-label">Export</span><span class="acct-value">Télécharger mes données</span><span class="acct-help">Un fichier JSON avec votre profil et vos statistiques.</span></div>
+              <button type="button" id="pf-export">Télécharger</button>
+            </div>
+            <div class="acct-row danger-row" data-edit="delete">
+              <div><span class="acct-label">Zone dangereuse</span><span class="acct-value">Supprimer mon compte</span><span class="acct-help">Efface votre compte, vos scores et votre IA en ligne. Irréversible.</span></div>
+              <button type="button" class="edit-btn danger">Supprimer…</button>
+              <form class="editor" hidden>
+                <p class="hint">Cette action est définitive. Vos données locales restent sur cet appareil.</p>
+                <label class="field"><span>Votre mot de passe actuel</span><input name="current" type="password" autocomplete="current-password"></label>
+                <p class="error msg"></p>
+                <div class="row-actions"><button class="danger">Supprimer définitivement</button><button type="button" class="cancel">Annuler</button></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions"><button type="button" id="pf-back" class="primary">Retour</button></div>
+    </section>
+
     <!-- CLASSEMENT -->
     <section id="board" class="screen">
       <header class="page-head"><h2>Classement</h2><p class="lead">Les joueurs ayant tenu le plus de vagues, carte par carte.</p></header>
       <div id="board-tabs" class="tabs"></div>
       <div id="board-body" class="panel board"></div>
-      <p class="muted center">Les scores ne sont pas vérifiés par le serveur.</p>
+      <p class="muted center">Classement : vague atteinte, puis vies restantes, puis durée la plus courte.<br>Les scores ne sont pas vérifiés par le serveur.</p>
       <div class="maps-actions"><button type="button" id="board-back">← Retour au menu</button></div>
     </section>
 

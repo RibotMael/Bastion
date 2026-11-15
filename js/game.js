@@ -92,6 +92,7 @@ class Game {
   start(settings, mapId) {
     this.mapId = mapId; setMap(mapId); this.picked = null; this.bg = this.makeBackground();
     this.trend = []; this.lastHeat = null; this.cover = null; this.showHeat = false; this.floaters = [];
+    this.clock = 0; this.safeLives = 20; this.safeTime = 0; // départage du classement
     this.settings = settings;
     this.speed = SPEEDS.find(v => v >= settings.speed) || 1;
     this.updateSpeedBtn();
@@ -314,6 +315,7 @@ class Game {
 
   // ----- Mise à jour -----
   update(dt) {
+    this.clock += dt;
     // Apparition des ennemis
     if (this.waveActive && this.queue.length) {
       this.spawnTimer -= dt;
@@ -390,6 +392,7 @@ class Game {
     if (this.waveActive && !this.queue.length && !this.enemies.length) {
       this.waveActive = false;
       this.gold += 20 + this.wave * 4;
+      this.safeLives = this.lives; this.safeTime = Math.floor(this.clock); // état à la fin de la dernière vague tenue
       this.analyzeWave();
       this.wave++;
       this.nextQueue = Adversary.buildWave(this.wave); this.renderNext();
@@ -449,11 +452,17 @@ class Game {
     const prevRec = Profile.data.records[this.mapId] || 0;
     Profile.data.records[this.mapId] = Math.max(prevRec, survived);
     Profile.data.aiWeights = { ...Adversary.weights };
-    Profile.data.history.push({ date: Date.now(), survived, ...report });
+    Profile.data.history.push({ date: Date.now(), survived, map: this.mapId, ...report });
     Profile.data.history = Profile.data.history.slice(-20);
     Profile.data.placements = Profile.data.placements.slice(-300);
+    if (survived >= 1) { // meilleur résultat local par carte : vague, puis vies restantes, puis durée
+      const lives = Math.max(0, Math.min(20, this.safeLives)), time = Math.min(9999, this.safeTime);
+      const run = { wave: survived, lives, time, score: scoreOf(survived, lives, time) };
+      Profile.data.best = Profile.data.best || {};
+      if (!Profile.data.best[this.mapId] || run.score > Profile.data.best[this.mapId].score) Profile.data.best[this.mapId] = run;
+    }
     Profile.save();
-    if (typeof Online !== 'undefined' && Online.user) { Online.submit(this.mapId, survived); Online.pushProfile(); }
+    if (typeof Online !== 'undefined' && Online.user) { Online.submit(this.mapId, (Profile.data.best || {})[this.mapId]); Online.pushProfile(); }
 
     this.updateHud();
     this.onEnd(report, { survived, best: Profile.data.records[this.mapId], newRecord: survived > prevRec, map: MAPS[this.mapId].name });

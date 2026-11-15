@@ -16,11 +16,14 @@ function refreshMenuStats() {
   box.append(el('h2', '', "Ce que l'IA sait de vous"));
   if (!p.games) { box.append(el('p', 'muted', "Rien pour l'instant. Jouez une première partie : l'ennemi prendra des notes.")); return; }
   const fav = Object.entries(p.towersPlaced).sort((a, b) => b[1] - a[1])[0];
-  const dl = el('dl', 'facts');
-  [['Parties jouées', p.games], ['Meilleure vague', p.bestWave], ['Tour favorite', fav[1] ? TYPE_LABELS[fav[0]] : '—']].forEach(([k, v]) => {
-    const row = el('div'); row.append(el('dt', '', k), el('dd', '', v)); dl.append(row);
+  const tiles = el('div', 'tiles');
+  [[p.games, 'parties'], [p.bestWave, 'meilleure vague'], [fav[1] ? TYPE_LABELS[fav[0]] : '—', 'tour favorite']].forEach(([v, l]) => {
+    const t = el('div', 'tile'); t.append(el('b', '', v), el('small', '', l)); tiles.append(t);
   });
-  box.append(dl);
+  box.append(tiles);
+  const rec = el('dl', 'facts');
+  Object.entries(MAPS).forEach(([id, mp]) => { const row = el('div'); row.append(el('dt', '', mp.name), el('dd', '', p.records[id] ? 'vague ' + p.records[id] : '—')); rec.append(row); });
+  box.append(rec);
   const last = p.history[p.history.length - 1];
   if (last && last.weaknesses && last.weaknesses[0]) box.append(el('p', 'note', 'Dernière faiblesse repérée : ' + last.weaknesses[0]));
 }
@@ -194,21 +197,21 @@ $('btn-reset').onclick = () => {
 refreshMenuStats();
 
 // ----- En ligne : compte, classement -----
+function openProfile(tab) { renderProfile(); setPane(tab || 'stats'); show('profile'); }
 function renderAccount() {
   const box = $('account-line');
   box.innerHTML = '';
-  const b = document.createElement('button');
-  b.className = 'link';
+  const mk = (cls, txt, fn) => { const b = document.createElement('button'); b.className = cls; b.textContent = txt; b.onclick = fn; return b; };
   if (typeof Online !== 'undefined' && Online.user) {
-    box.append(`Connecté : ${Online.name || Online.user.email} · `);
-    b.textContent = 'Déconnexion';
-    b.onclick = async () => { await Online.signOut(); };
+    const name = Online.name || Online.user.email;
+    const chip = mk('chip-btn', name, () => openProfile());
+    const av = document.createElement('span'); av.className = 'avatar'; av.textContent = name[0].toUpperCase();
+    chip.prepend(av);
+    box.append(chip, mk('chip-link', 'Déconnexion', async () => { await Online.signOut(); }));
   } else {
-    box.append('Mode invité · ');
-    b.textContent = 'Se connecter';
-    b.onclick = () => { setAuthMode('login'); show('account'); };
+    const t = document.createElement('span'); t.textContent = 'Mode invité';
+    box.append(t, mk('chip-btn solo', 'Se connecter', () => { setAuthMode('login'); show('account'); }));
   }
-  box.append(b);
 }
 
 let authMode = 'login';
@@ -242,11 +245,13 @@ $('auth-form').onsubmit = async (e) => {
       if (!$('auth-consent').checked) throw new Error("Cochez l'acceptation pour créer un compte.");
       await Online.signUp($('auth-name').value.trim(), email, pass);
     } else await Online.signIn(email, pass);
-    refreshMenuStats(); renderAccount(); show('menu');
-  } catch (ex) { err.textContent = Online.message(ex); }
+    show('menu');
+    try { refreshMenuStats(); renderAccount(); } catch (e2) { console.warn(e2); }
+  } catch (ex) { console.error('Connexion :', ex); err.textContent = Online.message(ex); }
   finally { btn.disabled = false; }
 };
 
+const fmtTime = (t) => Math.floor(t / 60) + ' min ' + String(t % 60).padStart(2, '0');
 let boardMap = 'vallee';
 async function openBoard(id) {
   if (id) boardMap = id;
@@ -271,11 +276,97 @@ async function openBoard(id) {
       const pos = document.createElement('span'); pos.className = 'pos'; pos.textContent = i + 1;
       const who = document.createElement('span'); who.className = 'who'; who.textContent = r.name;
       const val = document.createElement('span'); val.className = 'val'; val.textContent = 'vague ' + r.wave;
+      if (r.lives != null) { const d = document.createElement('small'); d.textContent = `${r.lives} vie${r.lives > 1 ? 's' : ''} · ${fmtTime(r.time)}`; val.append(d); }
       row.append(pos, who, val); body.append(row);
     });
   } catch (ex) { body.textContent = Online.message(ex); }
 }
 $('board-back').onclick = () => show('menu');
+
+// ----- Profil : statistiques et gestion du compte -----
+const fmtDate = (t) => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+function setPane(name) {
+  ['stats', 'account'].forEach(k => { $('pane-' + k).hidden = k !== name; $('ptab-' + k).classList.toggle('active', k === name); });
+  $('pf-msg').textContent = '';
+}
+$('ptab-stats').onclick = () => setPane('stats');
+$('ptab-account').onclick = () => setPane('account');
+
+function renderProfile() {
+  const p = Profile.data, on = typeof Online !== 'undefined' && Online.user;
+  const name = on ? (Online.name || Online.user.email) : 'Invité';
+  $('pf-avatar').textContent = name[0].toUpperCase();
+  $('pf-title').textContent = name;
+  $('profile-sub').textContent = on ? Online.user.email : 'Mode invité : vos statistiques restent sur cet appareil.';
+  $('pf-guest').hidden = !!on;
+  document.querySelectorAll('#profile .online-only').forEach(e => { e.hidden = !on; });
+  if (on) { $('acv-name').textContent = Online.name || '—'; $('acv-email').textContent = Online.user.email; }
+  const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
+  const kv = (box, rows) => { box.innerHTML = ''; rows.forEach(([k, v]) => { const r = el('div', 'kv'); r.append(el('span', '', k), el('b', '', v)); box.append(r); }); };
+  const hist = p.history || [], placed = p.towersPlaced, total = Object.values(placed).reduce((a, b) => a + b, 0);
+  const avg = hist.length ? (hist.reduce((s, h) => s + h.survived, 0) / hist.length).toFixed(1) : '—';
+  const tiles = $('pf-tiles'); tiles.innerHTML = '';
+  [[p.games, 'parties jouées'], [p.bestWave, 'meilleure vague'], [avg, 'vague moyenne'], [total, 'tours posées']].forEach(([v, l]) => {
+    const t = el('div', 'tile'); t.append(el('b', '', v), el('small', '', l)); tiles.append(t);
+  });
+  const bars = $('pf-bars'); bars.innerHTML = '';
+  Object.entries(TOWER_TYPES).forEach(([k, d]) => {
+    const n = placed[k] || 0, row = el('div', 'bar-row'), track = el('div', 'bar-track'), fill = el('div', 'bar-fill');
+    fill.style.width = (total ? Math.round(n / total * 100) : 0) + '%'; fill.style.background = d.color;
+    track.append(fill); row.append(el('span', '', d.name), track, el('span', 'num', n)); bars.append(row);
+  });
+  kv($('records-panel'), Object.entries(MAPS).map(([id, mp]) => [mp.name, p.records[id] ? 'vague ' + p.records[id] : '—']));
+  kv($('history-panel'), hist.length ? hist.slice(-8).reverse().map(h => [`${fmtDate(h.date)} · ${MAPS[h.map] ? MAPS[h.map].name : 'carte inconnue'}`, 'vague ' + h.survived]) : [['Aucune partie enregistrée', '']]);
+}
+
+// Chaque information a sa ligne : « Modifier » ouvre un petit formulaire explicite, un seul à la fois.
+document.querySelectorAll('.acct-row[data-edit]').forEach(row => {
+  const form = row.querySelector('.editor'), btn = row.querySelector('.edit-btn'), msg = row.querySelector('.msg'), kind = row.dataset.edit;
+  const label = btn.textContent;
+  const close = () => { form.hidden = true; form.reset(); msg.textContent = ''; btn.textContent = label; };
+  row._close = close;
+  btn.onclick = () => {
+    const wasOpen = !form.hidden;
+    document.querySelectorAll('.acct-row[data-edit]').forEach(r => r._close());
+    if (wasOpen) return;
+    form.hidden = false; btn.textContent = 'Fermer';
+    if (kind === 'name') form.elements.v.value = Online.name || '';
+    const first = form.querySelector('input'); if (first) first.focus();
+  };
+  row.querySelector('.cancel').onclick = close;
+  form.onsubmit = async (e) => {
+    e.preventDefault(); msg.textContent = '';
+    const f = form.elements;
+    try {
+      await Online.init();
+      let ok;
+      if (kind === 'name') { await Online.rename(f.v.value.trim()); ok = 'Pseudo mis à jour.'; }
+      else if (kind === 'email') { await Online.changeEmail(f.current.value, f.v.value.trim()); ok = `Un lien de confirmation a été envoyé à ${f.v.value.trim()}. Cliquez dessus pour valider le changement.`; }
+      else if (kind === 'password') {
+        if (f.v.value !== f.confirm.value) throw new Error('Les deux mots de passe ne correspondent pas.');
+        await Online.changePassword(f.current.value, f.v.value); ok = 'Mot de passe modifié.';
+      } else {
+        if (!confirm('Supprimer définitivement votre compte, vos scores et votre IA en ligne ?')) return;
+        await Online.deleteAccount(f.current.value);
+        renderAccount(); refreshMenuStats(); show('menu'); return;
+      }
+      close(); renderProfile(); renderAccount(); refreshMenuStats();
+      const t = $('pf-msg'); t.textContent = ok; t.className = 'error ok';
+    } catch (ex) { msg.textContent = Online.message(ex); }
+  };
+});
+
+$('pf-export').onclick = () => {
+  const on = typeof Online !== 'undefined' && Online.user;
+  const data = { exporte_le: new Date().toISOString(), compte: on ? { pseudo: Online.name, email: Online.user.email } : null, profil: Profile.data };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = 'bastion-mes-donnees.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('pf-back').onclick = () => show('menu');
+$('pf-login').onclick = () => { setAuthMode('login'); show('account'); };
+$('btn-profile').onclick = () => openProfile();
 
 renderAccount();
 if (typeof Online !== 'undefined') { Online.onChange(() => { renderAccount(); refreshMenuStats(); }); Online.init().catch(() => {}); }

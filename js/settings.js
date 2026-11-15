@@ -24,7 +24,7 @@ const Profile = {
   data: null,
 
   empty() {
-    return { games: 0, bestWave: 0, aiWeights: null, records: {}, seen: {}, towersPlaced: { archer: 0, cannon: 0, frost: 0 }, placements: [], history: [] };
+    return { games: 0, bestWave: 0, aiWeights: null, records: {}, best: {}, seen: {}, towersPlaced: { archer: 0, cannon: 0, frost: 0 }, placements: [], history: [] };
   },
 
   load() {
@@ -44,3 +44,9 @@ const Profile = {
     this.save();
   }
 };
+
+// Score de classement : la vague domine, puis les vies restantes, puis la rapidité (durée en secondes).
+// 20 vies × 10 000 < 1 000 000 et la durée est plafonnée à 9 999 s : chaque critère ne déborde jamais sur le précédent.
+function scoreOf(wave, lives, time) {
+  return wave * 1000000 + Math.max(0, Math.min(20, lives)) * 10000 + (9999 - Math.max(0, Math.min(9999, time)));
+}
