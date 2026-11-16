@@ -7,11 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
-  <script>
-    // Anti-cache : force le navigateur à recharger CSS et JS à chaque ouverture (à retirer pour une version finale).
-    var __v = Date.now();
-    document.write('<link rel="stylesheet" href="css/style.css?v=' + __v + '">');
-  </script>
+  <link rel="stylesheet" href="css/style.css?v=1">
 </head>
 <body>
   <svg class="bg-road" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -32,8 +28,68 @@
           <button id="btn-profile"><span class="lbl"><b>Profil</b><small>Statistiques et compte</small></span><span aria-hidden="true">›</span></button>
           <button id="btn-settings"><span class="lbl"><b>Paramètres</b><small>Vitesse, affichage, données</small></span><span aria-hidden="true">›</span></button>
         </div>
+        <p class="legal"><button type="button" id="btn-privacy" class="link">Confidentialité</button> · Conçu pour ordinateur (souris et grand écran)</p>
       </div>
       <aside id="menu-dossier" class="intel dossier"></aside>
+    </section>
+
+    <!-- CONFIDENTIALITÉ -->
+    <section id="privacy" class="screen">
+      <header class="page-head"><h2>Confidentialité</h2><p class="lead">Ce que Bastion enregistre, pourquoi, et comment tout effacer.</p></header>
+      <div class="panel prose">
+        <p class="small">Dernière mise à jour : 16 novembre 2026. Ce texte explique simplement quelles données Bastion utilise, pourquoi, pendant combien de temps, et comment vous gardez la main dessus.</p>
+
+        <h3>1. Qui est responsable ?</h3>
+        <p>Bastion est un jeu amateur. Le responsable du traitement est <b>Yami</b>. Pour toute question sur vos données : <b>yamisukehiro701@gmail.com</b>.</p>
+
+        <h3>2. Jouer sans compte</h3>
+        <p>En mode invité, vos réglages, vos records et le profil de l'IA (les statistiques de vos parties) restent <b>uniquement dans le stockage de votre navigateur</b>. Rien n'est envoyé sur Internet. Vous pouvez les effacer à tout moment (Paramètres → Mémoire de l'IA, ou en vidant les données du site dans votre navigateur).</p>
+
+        <h3>3. Créer un compte : quelles données, pourquoi, combien de temps</h3>
+        <ul>
+          <li><b>Email et mot de passe</b> : pour créer le compte et vous connecter. L'email est privé. Le mot de passe est géré par Firebase Authentication et n'est jamais lisible par le jeu ni par moi.</li>
+          <li><b>Pseudo</b> : pour vous identifier dans le classement. Il est <b>public</b>.</li>
+          <li><b>Meilleur score par carte</b> (vagues atteintes, vies restantes, durée) : pour le classement. Il est <b>public</b>.</li>
+          <li><b>Profil de l'IA</b> (statistiques de vos parties, tours posées, historique) : pour retrouver votre IA sur tous vos appareils. Il est <b>privé</b>, lisible par vous seul.</li>
+        </ul>
+        <p><b>Base légale :</b> votre consentement, donné en cochant la case à l'inscription, qui vaut aussi pour le service que vous demandez (compte, classement, synchronisation). Vous pouvez le retirer à tout moment en supprimant votre compte. La fourniture de ces données est facultative : sans elles, vous jouez en invité, simplement sans classement ni synchronisation.</p>
+        <p><b>Durée de conservation :</b> tant que votre compte existe. Dès que vous le supprimez, votre compte, votre pseudo, vos scores et votre profil d'IA sont effacés. Des copies techniques peuvent subsister brièvement chez le prestataire avant leur effacement définitif.</p>
+
+        <h3>4. Cookies et stockage local</h3>
+        <p>Bastion n'utilise <b>ni publicité, ni outil de mesure d'audience, ni cookie de suivi</b>. Il utilise seulement le stockage de votre navigateur, nécessaire au fonctionnement du jeu (réglages, progression) et à la session de connexion.</p>
+
+        <h3>5. Qui reçoit vos données ?</h3>
+        <ul>
+          <li><b>Google (Firebase Authentication et Cloud Firestore)</b> : comptes et base de données, en tant que sous-traitant.</li>
+          <li><b>GitHub (GitHub Pages)</b> : hébergement des fichiers du site. Il peut enregistrer des journaux techniques de connexion, comme votre adresse IP.</li>
+          <li><b>Google Fonts</b> : la police d'écriture est chargée depuis les serveurs de Google, qui reçoivent donc votre adresse IP.</li>
+          <li><b>Les autres joueurs</b> : ils voient votre pseudo et votre score dans le classement, et rien d'autre.</li>
+        </ul>
+        <p>Vos données ne sont ni vendues, ni louées, ni utilisées pour de la publicité.</p>
+
+        <h3>6. Transferts hors de l'Union européenne</h3>
+        <p><b>La base de données</b> (pseudo, scores, profil de l'IA) est stockée à l'emplacement choisi lors de sa création : <b>Europe</b>. Les <b>comptes de connexion</b> (email et mot de passe, stocké sous forme chiffrée) sont gérés par Firebase Authentication, un service de Google dont le lieu de traitement n'est pas configurable.</p>
+        <p>Google et GitHub étant des sociétés américaines, certains traitements techniques peuvent avoir lieu hors de l'Union européenne, encadrés par les garanties prévues par le RGPD (clauses contractuelles types ou cadre de protection des données UE–États-Unis, selon le prestataire).</p>
+
+        <h3>7. Vos droits</h3>
+        <p>Vous disposez des droits d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité, ainsi que du droit de retirer votre consentement. Vous pouvez les exercer en ligne, directement dans <b>Profil → Compte</b> :</p>
+        <ul>
+          <li>modifier votre pseudo, votre email et votre mot de passe ;</li>
+          <li><b>télécharger vos données</b> dans un fichier JSON ;</li>
+          <li><b>supprimer votre compte</b> et toutes les données en ligne associées.</li>
+        </ul>
+        <p>Pour toute autre demande, écrivez au contact indiqué plus haut : une réponse vous sera apportée dans un délai d'un mois. Si vous estimez que vos droits ne sont pas respectés, vous pouvez introduire une réclamation auprès de la <b>CNIL</b> (3 place de Fontenoy, 75007 Paris, <a href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>).</p>
+
+        <h3>8. Mineurs</h3>
+        <p>La création d'un compte est réservée aux personnes d'au moins 15 ans, ou avec l'accord d'un parent ou tuteur légal. Le mode invité est ouvert à tous et ne collecte rien en ligne.</p>
+
+        <h3>9. Sécurité et limites</h3>
+        <p>L'accès aux données est protégé par des règles de sécurité : chacun ne peut lire et modifier que ses propres données privées. Les scores ne sont <b>pas vérifiés</b> par le serveur : le classement est amical. Aucun service en ligne n'étant infaillible, choisissez un mot de passe que vous n'utilisez pas ailleurs.</p>
+
+        <h3>10. Modifications</h3>
+        <p>Ce texte peut évoluer. La date de dernière mise à jour figure en haut de la page, et tout changement important sera signalé dans le jeu.</p>
+      </div>
+      <div class="form-actions"><button type="button" id="privacy-back" class="primary">Retour</button></div>
     </section>
 
     <!-- COMPTE -->
@@ -174,14 +230,6 @@
           <label class="setting"><span class="s-text"><span class="s-name">Conseils de l'analyse</span><span class="s-desc">Pistes d'amélioration après chaque vague.</span></span><input type="checkbox" class="switch" id="set-advice"></label>
         </div>
 
-        <h3 class="group-title">Audio</h3>
-        <div class="panel">
-          <label class="setting">
-            <span class="s-text"><span class="s-name">Volume</span><span class="s-desc">Les effets sonores arrivent bientôt.</span></span>
-            <span class="range-wrap"><input type="range" id="set-volume" min="0" max="100"><output id="vol-out">70</output></span>
-          </label>
-        </div>
-
         <h3 class="group-title">Données</h3>
         <div class="panel">
           <div class="setting">
@@ -230,10 +278,11 @@
 
   </main>
 
-  <script>
-    ['settings', 'ai', 'game', 'online', 'main'].forEach(function (f) {
-      document.write('<script src="js/' + f + '.js?v=' + __v + '"><\/script>');
-    });
-  </script>
+  <!-- Changez le numéro ?v= à chaque mise à jour pour forcer les navigateurs à recharger les fichiers. -->
+  <script src="js/settings.js?v=1"></script>
+  <script src="js/ai.js?v=1"></script>
+  <script src="js/game.js?v=1"></script>
+  <script src="js/online.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
 </body>
 </html>

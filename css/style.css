@@ -363,3 +363,11 @@ body:has(#menu.active) .topbar { display: block; }
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .rank-row .val small { display: block; font: 400 0.75rem system-ui, sans-serif; color: var(--muted); text-align: right; }
+
+/* ===== Mentions, confidentialité ===== */
+.legal { margin: 22px 0 0; font-size: 0.82rem; color: var(--muted); }
+#privacy { max-width: 760px; margin: 0 auto; width: 100%; }
+.prose { padding: 8px 26px 18px; line-height: 1.6; }
+.prose h3 { font-size: 1.05rem; color: var(--gold); margin: 20px 0 4px; }
+.prose p, .prose li { margin: 4px 0; font-size: 0.93rem; }
+.prose ul { padding-left: 20px; margin: 4px 0; }

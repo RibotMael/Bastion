@@ -91,7 +91,7 @@ function buildMapCards() {
     const len = [...pathTilesOf(m.waypoints)].filter(k => { const c = Number(k.split(',')[0]); return c >= 0 && c < COLS; }).length;
     const chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = `Chemin : ${len} cases`;
     const r = document.createElement('span'); r.className = 'record';
-    r.innerHTML = rec ? `Record <b>${rec}</b>` : 'Jamais jouée';
+    if (rec) { const bb = document.createElement('b'); bb.textContent = rec; r.append('Record ', bb); } else r.textContent = 'Jamais jouée';
     f.append(chip, r);
     b.append(cv, h, d, f);
     b.onclick = () => startGame(id);
@@ -104,6 +104,19 @@ function startGame(id) {
   hideOverlay();
   show('game');
   game.start(Settings.values, currentMap);
+  if (!Profile.data.tutorialSeen && !Profile.data.games) { // première partie : mini-guide
+    Profile.data.tutorialSeen = true; Profile.save();
+    game.paused = true;
+    showOverlay('Bienvenue dans Bastion', '', [{ label: "C'est parti", primary: true, action: () => { hideOverlay(); game.paused = false; } }], {
+      title1: 'Pour bien commencer', weaknesses: [],
+      observations: [
+        'Choisissez une tour sous le plateau (touches 1, 2, 3), puis cliquez sur une case verte pour la poser.',
+        "Quand vous êtes prêt, cliquez sur « Lancer la vague » (ou appuyez sur la barre d'espace).",
+        "Les ennemis suivent la route. S'ils arrivent au bout, vous perdez des vies : à zéro, c'est fini.",
+        "Cliquez sur une tour pour l'améliorer. Après chaque vague, l'IA analyse votre façon de jouer : lisez son dossier à droite."
+      ]
+    });
+  }
 }
 
 function leaveGame() {
@@ -129,6 +142,8 @@ function togglePause() {
 $('btn-board').onclick = () => openBoard();
 $('btn-play').onclick = () => { buildMapCards(); show('maps'); };
 $('btn-maps-back').onclick = () => show('menu');
+$('btn-privacy').onclick = () => show('privacy');
+$('privacy-back').onclick = () => show('menu');
 $('btn-wave').onclick = () => game.launchWave();
 $('btn-pause').onclick = togglePause;
 $('btn-speed').onclick = () => game.cycleSpeed();
@@ -171,8 +186,6 @@ document.addEventListener('keydown', (e) => {
 function fillSettingsForm() {
   const v = Settings.values;
   $('set-speed').value = v.speed;
-  $('set-volume').value = v.volume;
-  $('vol-out').textContent = v.volume;
   $('set-grid').checked = v.grid;
   $('set-range').checked = v.range;
   $('set-advice').checked = v.advice !== false;
@@ -182,7 +195,6 @@ $('btn-settings').onclick = () => { fillSettingsForm(); show('settings'); };
 $('btn-back').onclick = () => { refreshMenuStats(); show('menu'); };
 
 $('set-speed').onchange = (e) => { Settings.values.speed = Number(e.target.value); Settings.save(); };
-$('set-volume').oninput = (e) => { Settings.values.volume = Number(e.target.value); $('vol-out').textContent = e.target.value; Settings.save(); };
 $('set-grid').onchange = (e) => { Settings.values.grid = e.target.checked; Settings.save(); };
 $('set-range').onchange = (e) => { Settings.values.range = e.target.checked; Settings.save(); };
 $('set-advice').onchange = (e) => { Settings.values.advice = e.target.checked; Settings.save(); };

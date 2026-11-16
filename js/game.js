@@ -502,7 +502,10 @@ class Game {
     box.scrollTop = 0;
     box.classList.remove('hidden');
     if (!this.intel) {
-      box.innerHTML = '<h2>Dossier de l\'adversaire</h2><p class="muted">L\'IA observe votre première vague. Son analyse apparaîtra ici.</p>' + (this.openingNote ? `<p>${this.openingNote}</p>` : '');
+      const h = document.createElement('h2'); h.textContent = "Dossier de l'adversaire";
+      const mu = document.createElement('p'); mu.className = 'muted'; mu.textContent = "L'IA observe votre première vague. Son analyse apparaîtra ici.";
+      box.append(h, mu);
+      if (this.openingNote) { const n = document.createElement('p'); n.textContent = this.openingNote; box.append(n); }
       return;
     }
     const i = this.intel;
@@ -544,7 +547,9 @@ class Game {
       const b = document.createElement('button');
       b.className = 'tower-btn' + (this.selected === key ? ' selected' : '');
       b.style.setProperty('--tower', def.color);
-      b.innerHTML = `<span class="swatch"></span>${def.name} <small>${def.cost} or · touche ${i + 1}</small>`;
+      const sw = document.createElement('span'); sw.className = 'swatch';
+      const sm = document.createElement('small'); sm.textContent = `${def.cost} or · touche ${i + 1}`;
+      b.append(sw, def.name + ' ', sm);
       b.onclick = () => this.select(this.selected === key ? null : key);
       bar.appendChild(b);
     });
