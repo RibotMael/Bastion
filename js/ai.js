@@ -180,7 +180,8 @@ const Adversary = {
 
   // Plus la vague avance, plus le budget de l'ennemi et sa résistance augmentent.
   budget(n)        { return Math.round(55 * Math.pow(1.25, n - 1) * this.aggression); },
-  hpMult(n)        { return (1 + 0.14 * (n - 1) + 0.02 * (n - 1) ** 2) * this.pressure * Math.pow(Math.max(1, this.budget(n) / BUDGET_CAP), 0.85); },
+  // La difficulté dynamique est plafonnée à ×1,5 pour les boss : ils restent battables même quand la défense est très forte.
+  hpMult(n, type)  { const p = type === 'boss' ? Math.min(this.pressure, 1.5) : this.pressure; return (1 + 0.14 * (n - 1) + 0.02 * (n - 1) ** 2) * p * Math.pow(Math.max(1, this.budget(n) / BUDGET_CAP), 0.85); },
   // Le revenu par vague reste proche de (180 + 30 n) même quand les ennemis deviennent très nombreux.
   rewardScale(n)   { return Math.min(1, (180 + 30 * n) / (0.8 * this.budget(n))); },
   armorBonus(n)    { return Math.floor((n - 1) / 5) + this.armorExtra; }, // +1 d'armure pour tous les ennemis toutes les 5 vagues

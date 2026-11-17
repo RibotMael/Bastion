@@ -45,14 +45,14 @@ const ENEMY_INFO = {
   runner: { name: 'Coureur', text: 'Très rapide, peu de vie. Les tours de Givre le rattrapent.' },
   brute: { name: 'Brute', text: 'Lente, très résistante, armure 3 : les archers lui font peu de dégâts.' },
   saboteur: { name: 'Saboteur', text: 'Neutralise 2 s la tour la plus entourée à portée (2,6 cases), toutes les 4 s. À abattre en priorité.' },
-  boss: { name: 'Boss', text: "Énorme réserve de vie, armure 5. Coûte 3 vies s'il passe. Arrive aux vagues 5, 10, 15…" }
+  boss: { name: 'Boss', text: "Grosse réserve de vie, armure 2 (plus les bonus de l'IA). Coûte 3 vies s'il passe. Arrive aux vagues 5, 10, 15…" }
 };
 const ENEMY_TYPES = {
   grunt:  { hp: 40,  speed: 55,  reward: 8,  color: '#d9d2c0', r: 11 },
   runner: { hp: 25,  speed: 100, reward: 7,  color: '#e0a526', r: 9 },
   brute:  { hp: 140, speed: 38,  reward: 20, color: '#a8453b', r: 14, armor: 3 },
   saboteur: { hp: 90, speed: 48, reward: 14, color: '#9a7ad6', r: 11, range: 2.6, sabo: 4 },
-  boss:   { hp: 900, speed: 30,  reward: 80, color: '#8a3fa8', r: 19, armor: 5, lives: 3 }
+  boss:   { hp: 700, speed: 30,  reward: 120, color: '#8a3fa8', r: 19, armor: 2, lives: 3 }
 };
 
 // Cases occupées par le chemin (on ne peut pas y construire).
@@ -402,7 +402,7 @@ class Game {
 
   spawnEnemy(type) {
     const def = ENEMY_TYPES[type];
-    const hp = def.hp * Adversary.hpMult(this.wave);
+    const hp = def.hp * Adversary.hpMult(this.wave, type);
     const [sx, sy] = WAYPOINTS[0];
     this.enemies.push({
       type, def, hp, maxHp: hp, speed: def.speed,

@@ -288,7 +288,9 @@ async function openBoard(id) {
       const pos = document.createElement('span'); pos.className = 'pos'; pos.textContent = i + 1;
       const who = document.createElement('span'); who.className = 'who'; who.textContent = r.name;
       const val = document.createElement('span'); val.className = 'val'; val.textContent = 'vague ' + r.wave;
-      if (r.lives != null) { const d = document.createElement('small'); d.textContent = `${r.lives} vie${r.lives > 1 ? 's' : ''} · ${fmtTime(r.time)}`; val.append(d); }
+      const d = document.createElement('small'); // 9999 s = ancien record dont le détail n'a jamais été enregistré
+      d.textContent = (r.lives != null && r.time < 9999) ? `${r.lives} vie${r.lives > 1 ? 's' : ''} · ${fmtTime(r.time)}` : 'ancien record (détail indisponible)';
+      val.append(d);
       row.append(pos, who, val); body.append(row);
     });
   } catch (ex) { body.textContent = Online.message(ex); }
@@ -321,12 +323,18 @@ function renderProfile() {
   [[p.games, 'parties jouées'], [p.bestWave, 'meilleure vague'], [avg, 'vague moyenne'], [total, 'tours posées']].forEach(([v, l]) => {
     const t = el('div', 'tile'); t.append(el('b', '', v), el('small', '', l)); tiles.append(t);
   });
+  // Une seule barre à 100 %, découpée en trois couleurs : la part de chaque type de tour.
   const bars = $('pf-bars'); bars.innerHTML = '';
+  const stack = el('div', 'stack-bar'), legend = el('div', 'legend');
   Object.entries(TOWER_TYPES).forEach(([k, d]) => {
-    const n = placed[k] || 0, row = el('div', 'bar-row'), track = el('div', 'bar-track'), fill = el('div', 'bar-fill');
-    fill.style.width = (total ? Math.round(n / total * 100) : 0) + '%'; fill.style.background = d.color;
-    track.append(fill); row.append(el('span', '', d.name), track, el('span', 'num', n)); bars.append(row);
+    const n = placed[k] || 0, share = total ? n / total * 100 : 0;
+    if (n) { const seg = el('div', 'seg'); seg.style.width = share + '%'; seg.style.background = d.color; seg.title = `${d.name} : ${n}`; stack.append(seg); }
+    const row = el('div', 'legend-row'), dot = el('span', 'dot');
+    dot.style.background = d.color;
+    row.append(dot, el('span', '', d.name), el('span', 'num', `${n} · ${Math.round(share)} %`));
+    legend.append(row);
   });
+  bars.append(stack, legend);
   kv($('records-panel'), Object.entries(MAPS).map(([id, mp]) => [mp.name, p.records[id] ? 'vague ' + p.records[id] : '—']));
   kv($('history-panel'), hist.length ? hist.slice(-8).reverse().map(h => [`${fmtDate(h.date)} · ${MAPS[h.map] ? MAPS[h.map].name : 'carte inconnue'}`, 'vague ' + h.survived]) : [['Aucune partie enregistrée', '']]);
 }
