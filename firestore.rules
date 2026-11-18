@@ -2,6 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function okw(x) { return x is number && x >= 0.5 && x <= 4; }
+
     // Profil public minimal d'un joueur (lecture : lui seul).
     match /users/{uid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
@@ -36,13 +38,29 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    // IA partagée (facultatif) : préférences d'ennemis lisibles par tous, modifiables par leur propriétaire.
+    match /ais/{uid} {
+      allow read: if true;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'w', 'style', 'games', 'best', 'updatedAt'])
+        && request.resource.data.name == getAfter(/databases/$(database)/documents/users/$(uid)).data.name
+        && request.resource.data.w.keys().hasOnly(['grunt', 'runner', 'brute', 'saboteur'])
+        && okw(request.resource.data.w.grunt) && okw(request.resource.data.w.runner)
+        && okw(request.resource.data.w.brute) && okw(request.resource.data.w.saboteur)
+        && request.resource.data.style is string && request.resource.data.style.size() <= 60
+        && request.resource.data.games is int && request.resource.data.best is int
+        && request.resource.data.best >= 0 && request.resource.data.best <= 200
+        && request.resource.data.updatedAt == request.time;
+    }
+
     // Classement : un meilleur résultat par joueur et par carte.
     // score = vague × 1 000 000 + vies restantes × 10 000 + (9 999 − durée en secondes) : il départage les égalités.
     match /maps/{map}/scores/{uid} {
       allow read: if true;
       allow delete: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null && request.auth.uid == uid
-        && map in ['vallee', 'serpentin', 'spirale']
+        && map in ['vallee', 'serpentin', 'spirale', 'noeud', 'lac', 'defile', 'labyrinthe']
         && request.resource.data.keys().hasOnly(['name', 'wave', 'lives', 'time', 'score', 'updatedAt'])
         && request.resource.data.wave is int && request.resource.data.wave >= 1 && request.resource.data.wave <= 200
         && request.resource.data.lives is int && request.resource.data.lives >= 0 && request.resource.data.lives <= 20

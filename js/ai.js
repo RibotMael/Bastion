@@ -170,9 +170,10 @@ const Adversary = {
   pressure: 1, // difficulté dynamique : monte quand vos tours tuent trop tôt
 
   // Nouvelle partie. `prior` = poids appris lors de la partie précédente (repris à moitié).
-  reset(prior) {
+  // `strength` : part des préférences apprises reprise au départ (0,5 pour sa propre IA, 1 pour l'IA d'un autre joueur).
+  reset(prior, strength = 0.5) {
     this.weights = { grunt: 1, runner: 1, brute: 1, saboteur: 1 };
-    if (prior) for (const k in this.weights) this.weights[k] = Math.max(0.6, 1 + ((prior[k] ?? 1) - 1) * 0.5);
+    if (prior) for (const t in this.weights) this.weights[t] = Math.max(0.6, 1 + ((prior[t] ?? 1) - 1) * strength);
     this.aggression = 1;
     this.armorExtra = 0;
     this.pressure = 1;
@@ -250,3 +251,9 @@ const Adversary = {
     return msgs;
   }
 };
+
+// Résumé lisible des préférences d'une IA (affiché dans la liste des adversaires).
+function aiStyle(w) {
+  const [k, v] = Object.entries(w).sort((x, y) => y[1] - x[1])[0];
+  return v >= 1.25 ? `aime les ${ENEMY_LABELS[k]} (×${v.toFixed(1)})` : 'équilibrée';
+}
