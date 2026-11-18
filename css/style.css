@@ -382,19 +382,3 @@ body:has(#menu.active) .topbar { display: block; }
 .legend-row { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: center; font-size: 0.9rem; }
 .legend-row .dot { width: 12px; height: 12px; border-radius: 3px; }
 .legend-row .num { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-
-/* ===== Nouvelle partie : deux étapes, cartes étiquetées ===== */
-.tabs { flex-wrap: wrap; }
-#maps .step { display: flex; gap: 16px; align-items: flex-start; text-align: left; margin: 6px 0 16px; }
-.step-n { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: #1d1606; font: 700 1.05rem var(--display); display: grid; place-items: center; }
-.step-body { flex: 1; min-width: 0; }
-.step-body h3 { margin: 4px 0 8px; font-size: 1.2rem; }
-.step-body .muted { margin-top: 0; }
-.seg { display: flex; gap: 10px; flex-wrap: wrap; }
-.seg .tab { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 10px 16px; background: var(--panel); }
-.seg .tab.active { background: var(--gold); }
-.seg .tab small { font-weight: 400; opacity: 0.75; font-size: 0.78rem; }
-#opp-pick { margin-top: 12px; }
-#opp-select { width: min(100%, 460px); }
-.map-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.tag { font-size: 0.72rem; padding: 2px 9px; border-radius: 999px; background: #0f1b1e; border: 1px solid #5b4727; color: #c3b69a; white-space: nowrap; }

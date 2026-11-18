@@ -23,7 +23,7 @@
         <h1 aria-label="Bastion">Basti<svg class="o-eye" viewBox="0 0 64 60" aria-hidden="true"><ellipse cx="32" cy="30" rx="30" ry="28" fill="#e2b04a"/><ellipse cx="32" cy="30" rx="16" ry="17.5" fill="#1a0f0c"/><circle class="iris" cx="32" cy="30" r="11" fill="#e4572e"/><circle id="eye-pupil" cx="32" cy="30" r="5" fill="#0d1619"/></svg>n</h1>
         <p class="tagline">L'ennemi observe votre façon de jouer. À chaque victoire, il revient plus malin.</p>
         <div class="menu-actions">
-          <button id="btn-play" class="primary"><span class="lbl"><b>Jouer</b><small>Choisir un adversaire et une carte</small></span><span aria-hidden="true">→</span></button>
+          <button id="btn-play" class="primary"><span class="lbl"><b>Jouer</b><small>Choisir une carte</small></span><span aria-hidden="true">→</span></button>
           <button id="btn-board"><span class="lbl"><b>Classement</b><small>Les meilleurs joueurs par carte</small></span><span aria-hidden="true">›</span></button>
           <button id="btn-profile"><span class="lbl"><b>Profil</b><small>Statistiques et compte</small></span><span aria-hidden="true">›</span></button>
           <button id="btn-settings"><span class="lbl"><b>Paramètres</b><small>Vitesse, affichage, données</small></span><span aria-hidden="true">›</span></button>
@@ -37,7 +37,7 @@
     <section id="privacy" class="screen">
       <header class="page-head"><h2>Confidentialité</h2><p class="lead">Ce que Bastion enregistre, pourquoi, et comment tout effacer.</p></header>
       <div class="panel prose">
-        <p class="small">Dernière mise à jour : 18 novembre 2026. Ce texte explique simplement quelles données Bastion utilise, pourquoi, pendant combien de temps, et comment vous gardez la main dessus.</p>
+        <p class="small">Dernière mise à jour : 16 novembre 2026. Ce texte explique simplement quelles données Bastion utilise, pourquoi, pendant combien de temps, et comment vous gardez la main dessus.</p>
 
         <h3>1. Qui est responsable ?</h3>
         <p>Bastion est un jeu amateur. Le responsable du traitement est <b>[À COMPLÉTER : votre nom ou pseudo]</b>. Pour toute question sur vos données : <b>[À COMPLÉTER : votre email de contact]</b>.</p>
@@ -51,7 +51,6 @@
           <li><b>Pseudo</b> : pour vous identifier dans le classement. Il est <b>public</b>.</li>
           <li><b>Meilleur score par carte</b> (vagues atteintes, vies restantes, durée) : pour le classement. Il est <b>public</b>.</li>
           <li><b>Profil de l'IA</b> (statistiques de vos parties, tours posées, historique) : pour retrouver votre IA sur tous vos appareils. Il est <b>privé</b>, lisible par vous seul.</li>
-          <li><b>Préférences de votre IA</b> (facultatif, désactivé par défaut) : les types d'ennemis que votre IA privilégie, avec votre pseudo et votre meilleure vague. Si vous activez « Partager mon IA » dans Profil → Compte, ces informations deviennent <b>publiques</b> : n'importe qui peut affronter votre IA. Vous pouvez les retirer à tout moment en désactivant l'option.</li>
         </ul>
         <p><b>Base légale :</b> votre consentement, donné en cochant la case à l'inscription, qui vaut aussi pour le service que vous demandez (compte, classement, synchronisation). Vous pouvez le retirer à tout moment en supprimant votre compte. La fourniture de ces données est facultative : sans elles, vous jouez en invité, simplement sans classement ni synchronisation.</p>
         <p><b>Durée de conservation :</b> tant que votre compte existe. Dès que vous le supprimez, votre compte, votre pseudo, vos scores et votre profil d'IA sont effacés. Des copies techniques peuvent subsister brièvement chez le prestataire avant leur effacement définitif.</p>
@@ -166,10 +165,6 @@
               </form>
             </div>
           </div>
-          <h3 class="group-title">Défis</h3>
-          <div class="panel">
-            <label class="setting"><span class="s-text"><span class="s-name">Partager mon IA</span><span class="s-desc">Les autres joueurs pourront l'affronter en partie amicale. Seules ses préférences d'ennemis sont publiées, pas vos parties.</span></span><input type="checkbox" class="switch" id="pf-share"></label>
-          </div>
           <h3 class="group-title">Vos données</h3>
           <div class="panel">
             <div class="acct-row">
@@ -204,27 +199,9 @@
     <!-- CARTES -->
     <section id="maps" class="screen">
       <header class="page-head">
-        <h2>Nouvelle partie</h2>
-        <p class="lead">Deux choix : votre adversaire, puis la carte.</p>
+        <h2>Choisir une carte</h2>
+        <p class="lead">Chaque carte garde son propre record de vagues.</p>
       </header>
-      <div class="step">
-        <span class="step-n">1</span>
-        <div class="step-body">
-          <h3>Votre adversaire</h3>
-          <div class="seg">
-            <button type="button" id="opp-mine" class="tab active">Mon IA<small>Elle apprend de vous · compte pour le classement</small></button>
-            <button type="button" id="opp-other" class="tab">L'IA d'un joueur<small>Partie amicale · hors classement</small></button>
-          </div>
-          <div id="opp-pick" hidden>
-            <select id="opp-select" hidden></select>
-            <p id="opp-info" class="muted small"></p>
-          </div>
-        </div>
-      </div>
-      <div class="step">
-        <span class="step-n">2</span>
-        <div class="step-body"><h3>La carte</h3><p class="muted small">Chaque carte a son propre record et son propre classement.</p></div>
-      </div>
       <div id="map-list" class="maps"></div>
       <div class="maps-actions"><button type="button" id="btn-maps-back">← Retour au menu</button></div>
     </section>

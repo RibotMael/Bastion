@@ -79,7 +79,6 @@ const Online = {
       Profile.save();
     }
     await this.pushProfile();
-    await this.pushAI();
     for (const [m, w] of Object.entries(Profile.data.records || {})) {
       const run = (Profile.data.best || {})[m] || { wave: w, lives: 0, time: 9999, score: scoreOf(w, 0, 9999) }; // anciens records : sans détail, départage au plus bas
       await this.submit(m, run);
@@ -116,29 +115,6 @@ const Online = {
     return rows;
   },
 
-  // IA partagée (facultatif, désactivé par défaut) : publie seulement les préférences d'ennemis, pas le profil.
-  async pushAI() {
-    const w = Profile.data.aiWeights;
-    if (!this.user || !this.name || !w) return;
-    const { doc, setDoc, deleteDoc, serverTimestamp } = this.F, ref = doc(this.db, 'ais', this.user.uid);
-    try {
-      if (!Settings.values.shareAI) { await deleteDoc(ref); return; }
-      const r = (x) => Math.round(Math.min(4, Math.max(0.5, x)) * 100) / 100;
-      await setDoc(ref, { name: this.name, w: { grunt: r(w.grunt), runner: r(w.runner), brute: r(w.brute), saboteur: r(w.saboteur) }, style: aiStyle(w), games: Profile.data.games || 0, best: Math.min(200, Profile.data.bestWave || 0), updatedAt: serverTimestamp() });
-      this.aiCache = null;
-    } catch (e) { console.warn('IA non partagée :', e.code || e.message); }
-  },
-
-  // Adversaires disponibles (cache 5 min pour économiser les lectures gratuites).
-  async listAIs() {
-    if (this.aiCache && Date.now() - this.aiCache.t < 300000) return this.aiCache.rows;
-    const { collection, query, orderBy, limit, getDocs } = this.F;
-    const snap = await getDocs(query(collection(this.db, 'ais'), orderBy('best', 'desc'), limit(30)));
-    const rows = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-    this.aiCache = { t: Date.now(), rows };
-    return rows;
-  },
-
   // Les opérations sensibles demandent le mot de passe actuel.
   async reauth(pass) {
     if (!pass) throw new Error('Saisissez votre mot de passe actuel.');
@@ -157,12 +133,10 @@ const Online = {
     const b = writeBatch(this.db);
     if (key !== oldKey) { b.set(doc(this.db, 'usernames', key), { uid }); b.delete(doc(this.db, 'usernames', oldKey)); }
     b.update(doc(this.db, 'users', uid), { name });
-    for (const m of Object.keys(MAPS)) {
+    for (const m of ['vallee', 'serpentin', 'spirale']) {
       const ref = doc(this.db, 'maps', m, 'scores', uid);
       if ((await getDoc(ref)).exists()) b.update(ref, { name, updatedAt: serverTimestamp() });
     }
-    const aiRef = doc(this.db, 'ais', uid);
-    if ((await getDoc(aiRef)).exists()) b.update(aiRef, { name, updatedAt: serverTimestamp() });
     await b.commit();
     this.name = name; this.cache = {}; this.emit();
   },
@@ -171,9 +145,8 @@ const Online = {
   async deleteAccount(pass) {
     await this.reauth(pass);
     const { doc, writeBatch } = this.F, uid = this.user.uid, b = writeBatch(this.db);
-    for (const m of Object.keys(MAPS)) b.delete(doc(this.db, 'maps', m, 'scores', uid));
+    for (const m of ['vallee', 'serpentin', 'spirale']) b.delete(doc(this.db, 'maps', m, 'scores', uid));
     b.delete(doc(this.db, 'profiles', uid));
-    b.delete(doc(this.db, 'ais', uid));
     if (this.name) b.delete(doc(this.db, 'usernames', this.name.toLowerCase()));
     b.delete(doc(this.db, 'users', uid));
     await b.commit();

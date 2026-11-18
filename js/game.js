@@ -3,13 +3,9 @@ const TILE = 48, COLS = 16, ROWS = 10;
 
 // Chemin des ennemis (coordonnées en cases). Il part hors écran et y ressort.
 const MAPS = {
-  vallee:    { name: 'La Vallée',     tag: 'Équilibrée',    desc: 'Le classique : un chemin en S, idéal pour apprendre.', waypoints: [[-1, 2], [3, 2], [3, 7], [8, 7], [8, 2], [12, 2], [12, 6], [16, 6]] },
-  serpentin: { name: 'Le Serpentin',  tag: 'Longues lignes', desc: 'De longues lignes droites, idéales pour le canon.', waypoints: [[-1, 1], [13, 1], [13, 4], [2, 4], [2, 8], [16, 8]] },
-  spirale:   { name: 'La Spirale',    tag: 'Sinueuse',      desc: 'Un chemin très sinueux : beaucoup de croisements de portée.', waypoints: [[-1, 8], [2, 8], [2, 1], [6, 1], [6, 6], [10, 6], [10, 1], [14, 1], [14, 8], [16, 8]] },
-  noeud:     { name: 'Le Nœud',       tag: 'Croisement',    desc: 'Le chemin se croise lui-même : une tour au carrefour couvre deux passages.', waypoints: [[-1, 3], [11, 3], [11, 7], [4, 7], [4, -1]] },
-  lac:       { name: 'Le Lac',        tag: 'Espace réduit', desc: 'Un lac occupe le centre : il faut bâtir autour, sur les berges.', waypoints: [[-1, 5], [3, 5], [3, 1], [12, 1], [12, 8], [16, 8]], obstacles: [[5, 3, 10, 6, 'water']] },
-  defile:    { name: 'Le Défilé',     tag: 'Court et rapide', desc: 'Un couloir tout droit entre deux falaises : peu de place, peu de temps.', waypoints: [[-1, 5], [16, 5]], obstacles: [[0, 0, 15, 2, 'rock'], [0, 8, 15, 9, 'rock']] },
-  labyrinthe:{ name: 'Le Labyrinthe', tag: 'Tours serrées', desc: 'Des couloirs en zigzag : chaque tour touche plusieurs passages.', waypoints: [[-1, 1], [2, 1], [2, 8], [5, 8], [5, 1], [8, 1], [8, 8], [11, 8], [11, 1], [14, 1], [14, 8], [16, 8]] }
+  vallee:    { name: 'La Vallée',    desc: 'Le classique : un chemin en S, équilibré.', waypoints: [[-1, 2], [3, 2], [3, 7], [8, 7], [8, 2], [12, 2], [12, 6], [16, 6]] },
+  serpentin: { name: 'Le Serpentin', desc: 'De longues lignes droites, idéales pour le canon.', waypoints: [[-1, 1], [13, 1], [13, 4], [2, 4], [2, 8], [16, 8]] },
+  spirale:   { name: 'La Spirale',   desc: 'Un chemin très sinueux : beaucoup de croisements de portée.', waypoints: [[-1, 8], [2, 8], [2, 1], [6, 1], [6, 6], [10, 6], [10, 1], [14, 1], [14, 8], [16, 8]] }
 };
 let WAYPOINTS = MAPS.vallee.waypoints;
 
@@ -73,11 +69,8 @@ function pathTilesOf(W) {
 }
 let PATH_TILES = pathTilesOf(WAYPOINTS);
 let PATH_LEN = 1;
-let OBST = new Map(); // obstacles (lac, falaises) : cases non constructibles
 function setMap(id) {
   WAYPOINTS = MAPS[id].waypoints; PATH_TILES = pathTilesOf(WAYPOINTS);
-  OBST = new Map();
-  (MAPS[id].obstacles || []).forEach(([c1, r1, c2, r2, kind]) => { for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) OBST.set(c + ',' + r, kind); });
   PATH_LEN = WAYPOINTS.slice(1).reduce((s, [x, y], i) => s + Math.hypot(x - WAYPOINTS[i][0], y - WAYPOINTS[i][1]), 0) * TILE;
 }
 const MAX_LEVEL = 4;
@@ -96,8 +89,7 @@ class Game {
     this.bindInput();
   }
 
-  start(settings, mapId, opponent) {
-    this.opponent = opponent || null; // IA d'un autre joueur : partie amicale
+  start(settings, mapId) {
     this.mapId = mapId; setMap(mapId); this.picked = null; this.bg = this.makeBackground();
     this.trend = []; this.lastHeat = null; this.cover = null; this.showHeat = false; this.floaters = [];
     this.clock = 0; this.safeLives = 20; this.safeTime = 0; // départage du classement
@@ -123,11 +115,11 @@ class Game {
       livesLost: { grunt: 0, runner: 0, brute: 0, boss: 0, saboteur: 0 }
     };
     this.waveStats = this.freshWaveStats();
-    Adversary.reset(this.opponent ? this.opponent.w : Profile.data.aiWeights, this.opponent ? 1 : 0.5);
+    Adversary.reset(Profile.data.aiWeights);
     // Mémoire entre les parties : l'IA anticipe votre ouverture habituelle.
     this.openingNote = null;
     const early = (Profile.data.placements || []).filter(p => p.wave <= 2);
-    if (!this.opponent && early.length >= 6) {
+    if (early.length >= 6) {
       const top = (key) => { const c = {}; early.forEach(p => { const k = key(p); c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0][0]; };
       const ty = top(p => p.type), zn = top(p => zoneOf(p.col));
       const m = { archer: 'brute', cannon: 'runner', frost: 'grunt' }[ty];
@@ -184,7 +176,7 @@ class Game {
   // ----- Actions -----
   canBuild(col, row) {
     return col >= 0 && col < COLS && row >= 0 && row < ROWS &&
-      !PATH_TILES.has(col + ',' + row) && !OBST.has(col + ',' + row) &&
+      !PATH_TILES.has(col + ',' + row) &&
       !this.towers.some(t => t.col === col && t.row === row);
   }
 
@@ -454,11 +446,6 @@ class Game {
     this.over = true;
     const survived = this.wave - 1;
     const report = Analyst.analyze(this.stats, { mode: 'game', wave: this.wave, survived, lives: this.lives });
-    if (this.opponent) { // partie amicale : ni record, ni classement, ni modification de votre IA
-      this.updateHud();
-      this.onEnd(report, { survived, friendly: true, opponent: this.opponent.name, map: MAPS[this.mapId].name });
-      return;
-    }
 
     Profile.data.games++;
     Profile.data.bestWave = Math.max(Profile.data.bestWave || 0, survived);
@@ -475,7 +462,7 @@ class Game {
       if (!Profile.data.best[this.mapId] || run.score > Profile.data.best[this.mapId].score) Profile.data.best[this.mapId] = run;
     }
     Profile.save();
-    if (typeof Online !== 'undefined' && Online.user) { Online.submit(this.mapId, (Profile.data.best || {})[this.mapId]); Online.pushProfile(); Online.pushAI(); }
+    if (typeof Online !== 'undefined' && Online.user) { Online.submit(this.mapId, (Profile.data.best || {})[this.mapId]); Online.pushProfile(); }
 
     this.updateHud();
     this.onEnd(report, { survived, best: Profile.data.records[this.mapId], newRecord: survived > prevRec, map: MAPS[this.mapId].name });
@@ -519,7 +506,6 @@ class Game {
       const mu = document.createElement('p'); mu.className = 'muted'; mu.textContent = "L'IA observe votre première vague. Son analyse apparaîtra ici.";
       box.append(h, mu);
       if (this.openingNote) { const n = document.createElement('p'); n.textContent = this.openingNote; box.append(n); }
-      if (this.opponent) { const n = document.createElement('p'); n.textContent = `Adversaire : l'IA de ${this.opponent.name} (${this.opponent.style}). Partie amicale, hors classement.`; box.append(n); }
       return;
     }
     const i = this.intel;
@@ -581,14 +567,6 @@ class Game {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const x = c * TILE, y = r * TILE;
       g.fillStyle = hash(c, r, 1) > 0.5 ? '#2f4a39' : '#2a4233'; g.fillRect(x, y, TILE, TILE);
-      const ob = OBST.get(c + ',' + r);
-      if (ob) { // lac ou falaise
-        g.fillStyle = ob === 'water' ? '#264a63' : '#3a4144'; g.fillRect(x, y, TILE, TILE);
-        g.strokeStyle = ob === 'water' ? 'rgba(160,210,235,0.28)' : 'rgba(255,255,255,0.09)'; g.lineWidth = 1.5; g.beginPath();
-        if (ob === 'water') { g.moveTo(x + 8, y + 18); g.quadraticCurveTo(x + 16, y + 12, x + 24, y + 18); g.quadraticCurveTo(x + 32, y + 24, x + 40, y + 18); g.moveTo(x + 6, y + 34); g.quadraticCurveTo(x + 14, y + 28, x + 22, y + 34); }
-        else { g.moveTo(x + 6, y + 36); g.lineTo(x + 20, y + 12); g.lineTo(x + 34, y + 30); g.lineTo(x + 44, y + 16); }
-        g.stroke(); continue;
-      }
       if (PATH_TILES.has(c + ',' + r)) continue;
       g.strokeStyle = 'rgba(160,200,130,0.25)'; g.lineWidth = 1.5;
       for (let i = 0; i < 3; i++) {
@@ -768,7 +746,6 @@ function drawMapPreview(canvas, id) {
   ctx.scale(k, k);
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if ((c + r) % 2) ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
-  (MAPS[id].obstacles || []).forEach(([c1, r1, c2, r2, kind]) => { ctx.fillStyle = kind === 'water' ? '#264a63' : '#3a4144'; ctx.fillRect(c1 * TILE, r1 * TILE, (c2 - c1 + 1) * TILE, (r2 - r1 + 1) * TILE); });
   const route = (w, col) => {
     ctx.beginPath();
     W.forEach(([x, y], i) => { const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
