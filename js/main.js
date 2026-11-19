@@ -64,7 +64,9 @@ const hideOverlay = () => $('overlay').classList.add('hidden');
 const game = new Game($('canvas'), (report, result) => {
   showOverlay(
     'Fin de partie',
-    `${result.map} : vous avez tenu ${result.survived} vague(s). Record : ${result.best}.` + (result.newRecord ? ' Nouveau record !' : ''),
+    result.friendly
+      ? `Partie amicale contre l'IA de ${result.opponent} (${result.map}) : ${result.survived} vague(s) tenue(s). Elle ne compte pas pour le classement.`
+      : `${result.map} : vous avez tenu ${result.survived} vague(s). Record : ${result.best}.` + (result.newRecord ? ' Nouveau record !' : ''),
     [
       { label: 'Rejouer', primary: true, action: startGame },
       { label: 'Menu', action: leaveGame }
@@ -88,12 +90,14 @@ function buildMapCards() {
     const h = document.createElement('h3'); h.textContent = m.name;
     const d = document.createElement('p'); d.textContent = m.desc;
     const f = document.createElement('div'); f.className = 'map-foot';
-    const len = [...pathTilesOf(m.waypoints)].filter(k => { const c = Number(k.split(',')[0]); return c >= 0 && c < COLS; }).length;
+    const len = [...pathTilesOf(m.waypoints)].filter(k => { const [c, r] = k.split(',').map(Number); return c >= 0 && c < COLS && r >= 0 && r < ROWS; }).length;
     const chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = `Chemin : ${len} cases`;
     const r = document.createElement('span'); r.className = 'record';
     if (rec) { const bb = document.createElement('b'); bb.textContent = rec; r.append('Record ', bb); } else r.textContent = 'Jamais jouée';
     f.append(chip, r);
-    b.append(cv, h, d, f);
+    const tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = m.tag;
+    const head = document.createElement('div'); head.className = 'map-head'; head.append(h, tg);
+    b.append(cv, head, d, f);
     b.onclick = () => startGame(id);
     list.appendChild(b);
   }
@@ -101,9 +105,10 @@ function buildMapCards() {
 
 function startGame(id) {
   if (typeof id === 'string') currentMap = id;
+  if (oppMode === 'other' && !opp) { $('opp-info').textContent = "Choisissez d'abord un adversaire dans la liste."; return; }
   hideOverlay();
   show('game');
-  game.start(Settings.values, currentMap);
+  game.start(Settings.values, currentMap, oppMode === 'other' ? opp : null);
   if (!Profile.data.tutorialSeen && !Profile.data.games) { // première partie : mini-guide
     Profile.data.tutorialSeen = true; Profile.save();
     game.paused = true;
@@ -140,7 +145,35 @@ function togglePause() {
 }
 
 $('btn-board').onclick = () => openBoard();
-$('btn-play').onclick = () => { buildMapCards(); show('maps'); };
+// ----- Nouvelle partie : 1. l'adversaire, 2. la carte -----
+let oppMode = 'mine', opp = null;
+function pickOpp(a) {
+  opp = a;
+  $('opp-info').textContent = `Partie amicale contre l'IA de ${a.name} : elle commence avec ses préférences (${a.style}). Elle ne compte pas pour le classement.`;
+}
+async function loadOpponents() {
+  const sel = $('opp-select'), info = $('opp-info');
+  sel.innerHTML = ''; sel.hidden = true; opp = null; info.textContent = 'Chargement…';
+  try {
+    await Online.init();
+    const list = await Online.listAIs();
+    if (!list.length) { info.textContent = "Aucun joueur n'a encore partagé son IA. Vous pouvez partager la vôtre dans Profil → Compte."; return; }
+    list.forEach((a, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${a.name} · vague max ${a.best} · ${a.style}`; sel.append(o); });
+    sel.hidden = false;
+    sel.onchange = () => pickOpp(list[sel.value]);
+    pickOpp(list[0]);
+  } catch (ex) { info.textContent = Online.message(ex); }
+}
+function setOppMode(mode) {
+  oppMode = mode; opp = null;
+  $('opp-mine').classList.toggle('active', mode === 'mine');
+  $('opp-other').classList.toggle('active', mode === 'other');
+  $('opp-pick').hidden = mode !== 'other';
+  if (mode === 'other') loadOpponents();
+}
+$('opp-mine').onclick = () => setOppMode('mine');
+$('opp-other').onclick = () => setOppMode('other');
+$('btn-play').onclick = () => { setOppMode('mine'); buildMapCards(); show('maps'); };
 $('btn-maps-back').onclick = () => show('menu');
 $('btn-privacy').onclick = () => show('privacy');
 $('privacy-back').onclick = () => show('menu');
@@ -314,7 +347,7 @@ function renderProfile() {
   $('profile-sub').textContent = on ? Online.user.email : 'Mode invité : vos statistiques restent sur cet appareil.';
   $('pf-guest').hidden = !!on;
   document.querySelectorAll('#profile .online-only').forEach(e => { e.hidden = !on; });
-  if (on) { $('acv-name').textContent = Online.name || '—'; $('acv-email').textContent = Online.user.email; }
+  if (on) { $('acv-name').textContent = Online.name || '—'; $('acv-email').textContent = Online.user.email; $('pf-share').checked = !!Settings.values.shareAI; }
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
   const kv = (box, rows) => { box.innerHTML = ''; rows.forEach(([k, v]) => { const r = el('div', 'kv'); r.append(el('span', '', k), el('b', '', v)); box.append(r); }); };
   const hist = p.history || [], placed = p.towersPlaced, total = Object.values(placed).reduce((a, b) => a + b, 0);
@@ -376,6 +409,16 @@ document.querySelectorAll('.acct-row[data-edit]').forEach(row => {
   };
 });
 
+$('pf-share').onchange = async (e) => {
+  const t = $('pf-msg');
+  Settings.values.shareAI = e.target.checked; Settings.save();
+  try {
+    await Online.init(); await Online.pushAI(true);
+    t.textContent = !Profile.data.aiWeights ? "Réglage enregistré. Jouez une partie d'abord : votre IA n'a encore rien appris à partager."
+      : e.target.checked ? "Votre IA est visible : les autres joueurs peuvent l'affronter." : "Votre IA n'est plus partagée.";
+    t.className = 'error ok';
+  } catch (ex) { t.textContent = Online.message(ex); t.className = 'error'; }
+};
 $('pf-export').onclick = () => {
   const on = typeof Online !== 'undefined' && Online.user;
   const data = { exporte_le: new Date().toISOString(), compte: on ? { pseudo: Online.name, email: Online.user.email } : null, profil: Profile.data };
