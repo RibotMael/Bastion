@@ -398,3 +398,15 @@ body:has(#menu.active) .topbar { display: block; }
 #opp-select { width: min(100%, 460px); }
 .map-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .tag { font-size: 0.72rem; padding: 2px 9px; border-radius: 999px; background: #0f1b1e; border: 1px solid #5b4727; color: #c3b69a; white-space: nowrap; }
+
+/* ===== Explication du mode « IA d'un joueur » ===== */
+.explain { margin-top: 14px; padding: 16px 18px; background: #0f1b1e; border: 1px solid var(--edge); border-left: 4px solid var(--gold); border-radius: 6px; text-align: left; }
+.explain h4 { margin: 0 0 8px; font: 600 1rem var(--display); color: var(--gold); }
+.explain p { margin: 0; font-size: 0.92rem; }
+.explain ol { margin: 0 0 14px; padding-left: 22px; font-size: 0.92rem; }
+.explain li { margin: 5px 0; }
+.mix { display: grid; grid-template-columns: 130px 1fr auto; gap: 8px 12px; align-items: center; font-size: 0.85rem; margin-top: 8px; }
+.mix .stack-bar { height: 12px; }
+.mix .num { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mix-legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
+.mix-legend .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-left: 6px; }

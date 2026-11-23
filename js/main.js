@@ -147,9 +147,48 @@ function togglePause() {
 $('btn-board').onclick = () => openBoard();
 // ----- Nouvelle partie : 1. l'adversaire, 2. la carte -----
 let oppMode = 'mine', opp = null;
+// Encadré « Comment ça se passe ? » : explique concrètement ce que change l'adversaire choisi.
+const MIX_TYPES = ['grunt', 'runner', 'brute'];
+function mixOf(w) { // part de chaque type d'ennemi (vagues 4 à 9) : fréquence de base × préférence de l'IA
+  const raw = MIX_TYPES.map(t => ENEMY_BASE[t] * (w ? w[t] : 1)), s = raw.reduce((a, b) => a + b, 0);
+  return raw.map(x => x / s * 100);
+}
+function renderExplain() {
+  const box = $('opp-explain');
+  const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
+  box.innerHTML = '';
+  if (oppMode === 'mine') {
+    box.append(el('h4', '', 'Comment se déroule la partie ?'),
+      el('p', '', "Vous affrontez l'IA qui apprend de vous : après chaque vague, elle observe votre défense et adapte les ennemis suivants. Votre résultat compte pour votre record et pour le classement de la carte."));
+    return;
+  }
+  const who = opp ? `l'IA de ${opp.name}` : "l'IA d'un autre joueur";
+  box.append(el('h4', '', `Comment se déroule une partie contre ${who} ?`));
+  const steps = [
+    `Au départ, l'IA reprend les préférences apprises par ${opp ? opp.name : "ce joueur"} : elle envoie plus souvent les types d'ennemis qu'elle a pris l'habitude d'utiliser contre lui.`,
+    "Les vagues restent tirées au hasard : ce ne sont pas celles que ce joueur a affrontées. Seule la proportion de chaque type d'ennemi change.",
+    "Dès la première vague, l'IA apprend de vous : elle oublie peu à peu ses habitudes de départ et s'adapte à votre défense. L'effet se ressent surtout au début.",
+    "Les règles ne changent pas : mêmes tours, mêmes améliorations, mêmes boss (vagues 5, 10…), mêmes ennemis débloqués aux mêmes vagues.",
+    "C'est une partie amicale : elle ne compte ni pour votre record, ni pour le classement, et ne modifie pas votre propre IA."
+  ];
+  const ol = el('ol'); steps.forEach(t => ol.append(el('li', '', t))); box.append(ol);
+  if (!opp) { box.append(el('p', 'muted small', "Choisissez un joueur dans la liste pour voir ce que son IA change.")); return; }
+  const row = (label, w) => {
+    const p = mixOf(w), bar = el('div', 'stack-bar');
+    MIX_TYPES.forEach((t, i) => { const s = el('div', 'seg'); s.style.width = p[i] + '%'; s.style.background = ENEMY_TYPES[t].color; s.title = `${ENEMY_INFO[t].name} : ${Math.round(p[i])} %`; bar.append(s); });
+    return [el('span', '', label), bar, el('span', 'num', p.map(x => Math.round(x)).join(' · ') + ' %')];
+  };
+  const mix = el('div', 'mix');
+  mix.append(...row('IA par défaut', null), ...row(`IA de ${opp.name}`, opp.w));
+  box.append(el('h4', '', 'Ennemis envoyés sur 100 (vagues 4 à 9)'), mix);
+  const lg = el('div', 'mix-legend');
+  MIX_TYPES.forEach(t => { const d = el('span', 'dot'); d.style.background = ENEMY_TYPES[t].color; lg.append(d, el('span', '', ENEMY_INFO[t].name + 's')); });
+  box.append(lg);
+}
 function pickOpp(a) {
   opp = a;
   $('opp-info').textContent = `Partie amicale contre l'IA de ${a.name} : elle commence avec ses préférences (${a.style}). Elle ne compte pas pour le classement.`;
+  renderExplain();
 }
 async function loadOpponents() {
   const sel = $('opp-select'), info = $('opp-info');
@@ -169,6 +208,7 @@ function setOppMode(mode) {
   $('opp-mine').classList.toggle('active', mode === 'mine');
   $('opp-other').classList.toggle('active', mode === 'other');
   $('opp-pick').hidden = mode !== 'other';
+  renderExplain();
   if (mode === 'other') loadOpponents();
 }
 $('opp-mine').onclick = () => setOppMode('mine');
