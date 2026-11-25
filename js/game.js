@@ -71,13 +71,32 @@ function pathTilesOf(W) {
   }
   return set;
 }
+// Décor automatique : une case à plus de DECOR_DIST cases du chemin ne servirait à rien (aucune tour ne l'atteint),
+// elle devient arbres ou ruines et n'est plus constructible.
+const DECOR_DIST = 3.3;
+function segDist(px, py, [ax, ay], [bx, by]) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  const t = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function computeObst(id) { // obstacles déclarés (lac, falaises) + décor automatique
+  const M = MAPS[id], W = M.waypoints, P = pathTilesOf(W), map = new Map();
+  (M.obstacles || []).forEach(([c1, r1, c2, r2, kind]) => { for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) map.set(c + ',' + r, kind); });
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const k = c + ',' + r;
+    if (P.has(k) || map.has(k)) continue;
+    let best = 99;
+    for (let i = 0; i < W.length - 1; i++) best = Math.min(best, segDist(c, r, W[i], W[i + 1]));
+    if (best > DECOR_DIST) map.set(k, (c * 7 + r * 13) % 10 < 7 ? 'tree' : 'ruin');
+  }
+  return map;
+}
 let PATH_TILES = pathTilesOf(WAYPOINTS);
 let PATH_LEN = 1;
 let OBST = new Map(); // obstacles (lac, falaises) : cases non constructibles
 function setMap(id) {
   WAYPOINTS = MAPS[id].waypoints; PATH_TILES = pathTilesOf(WAYPOINTS);
-  OBST = new Map();
-  (MAPS[id].obstacles || []).forEach(([c1, r1, c2, r2, kind]) => { for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) OBST.set(c + ',' + r, kind); });
+  OBST = computeObst(id);
   PATH_LEN = WAYPOINTS.slice(1).reduce((s, [x, y], i) => s + Math.hypot(x - WAYPOINTS[i][0], y - WAYPOINTS[i][1]), 0) * TILE;
 }
 const MAX_LEVEL = 4;
@@ -99,6 +118,7 @@ class Game {
   start(settings, mapId, opponent) {
     this.opponent = opponent || null; // IA d'un autre joueur : partie amicale
     this.mapId = mapId; setMap(mapId); this.picked = null; this.bg = this.makeBackground();
+    this.pathList = [...PATH_TILES].map(k => k.split(',').map(Number)).filter(([c, r]) => c >= 0 && c < COLS && r >= 0 && r < ROWS); this.vm = null;
     this.trend = []; this.lastHeat = null; this.cover = null; this.showHeat = false; this.floaters = [];
     this.clock = 0; this.safeLives = 20; this.safeTime = 0; // départage du classement
     this.settings = settings;
@@ -179,6 +199,21 @@ class Game {
     this.selected = type;
     if (type) this.picked = null;
     this.updateToolbar();
+  }
+
+  // Valeur d'un emplacement : nombre de cases de chemin qu'une tour de ce type y couvrirait (portée de niveau 1).
+  valueMap(type) {
+    if (this.vm && this.vm.type === type) return this.vm;
+    const range = TOWER_TYPES[type].range * TILE, map = new Map();
+    let max = 1;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (PATH_TILES.has(c + ',' + r) || OBST.has(c + ',' + r)) continue;
+      const x = (c + 0.5) * TILE, y = (r + 0.5) * TILE;
+      let n = 0;
+      for (const [pc, pr] of this.pathList) if (Math.hypot((pc + 0.5) * TILE - x, (pr + 0.5) * TILE - y) <= range) n++;
+      map.set(c + ',' + r, n); if (n > max) max = n;
+    }
+    return (this.vm = { type, map, max });
   }
 
   // ----- Actions -----
@@ -582,6 +617,20 @@ class Game {
       const x = c * TILE, y = r * TILE;
       g.fillStyle = hash(c, r, 1) > 0.5 ? '#2f4a39' : '#2a4233'; g.fillRect(x, y, TILE, TILE);
       const ob = OBST.get(c + ',' + r);
+      if (ob === 'tree' || ob === 'ruin') { // décor : forêt ou ruines
+        if (ob === 'tree') {
+          [[15, 18, 11], [33, 14, 9], [27, 34, 12]].forEach(([dx, dy, rad]) => {
+            g.fillStyle = 'rgba(10,20,16,0.35)'; g.beginPath(); g.arc(x + dx + 2, y + dy + 3, rad, 0, 7); g.fill();
+            g.fillStyle = '#1d3a29'; g.beginPath(); g.arc(x + dx, y + dy, rad, 0, 7); g.fill();
+            g.fillStyle = '#2b5539'; g.beginPath(); g.arc(x + dx - 3, y + dy - 3, rad * 0.5, 0, 7); g.fill();
+          });
+        } else {
+          g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x + 12, y + 34, 24, 3);
+          g.fillStyle = '#5c6663'; g.fillRect(x + 8, y + 22, 14, 12); g.fillRect(x + 26, y + 14, 12, 16);
+          g.fillStyle = '#7b8683'; g.fillRect(x + 8, y + 22, 14, 3); g.fillRect(x + 26, y + 14, 12, 3);
+        }
+        continue;
+      }
       if (ob) { // lac ou falaise
         g.fillStyle = ob === 'water' ? '#264a63' : '#3a4144'; g.fillRect(x, y, TILE, TILE);
         g.strokeStyle = ob === 'water' ? 'rgba(160,210,235,0.28)' : 'rgba(255,255,255,0.09)'; g.lineWidth = 1.5; g.beginPath();
@@ -706,6 +755,16 @@ class Game {
     }
 
     const { col, row } = this.mouse;
+    let tip = null;
+    if (this.selected) { // aide au placement : emplacements faibles assombris, meilleurs marqués d'un point doré
+      const vm = this.valueMap(this.selected);
+      vm.map.forEach((n, k) => {
+        const [c, r] = k.split(',').map(Number);
+        if (this.towers.some(t => t.col === c && t.row === r)) return;
+        if (n <= vm.max * 0.3) { ctx.fillStyle = 'rgba(8,14,16,0.5)'; ctx.fillRect(c * TILE, r * TILE, TILE, TILE); }
+        else if (n >= vm.max * 0.8) { ctx.fillStyle = 'rgba(226,176,74,0.9)'; ctx.beginPath(); ctx.arc(c * TILE + 8, r * TILE + 8, 2.5, 0, 7); ctx.fill(); }
+      });
+    }
     if (this.selected && this.canBuild(col, row)) {
       const def = TOWER_TYPES[this.selected];
       const cx = (col + 0.5) * TILE, cy = (row + 0.5) * TILE;
@@ -713,6 +772,11 @@ class Game {
       ctx.beginPath(); ctx.roundRect(col * TILE + 6, row * TILE + 6, TILE - 12, TILE - 12, 6); ctx.fill();
       ctx.globalAlpha = 1;
       this.drawRange(cx, cy, def.range, this.gold >= def.cost ? '255,255,255' : '228,87,46');
+      const vm = this.valueMap(this.selected), n = vm.map.get(col + ',' + row) || 0;
+      ctx.fillStyle = 'rgba(226,176,74,0.3)'; // cases de chemin couvertes depuis cet emplacement
+      for (const [pc, pr] of this.pathList) if (Math.hypot((pc + 0.5) * TILE - cx, (pr + 0.5) * TILE - cy) <= def.range * TILE) ctx.fillRect(pc * TILE + 2, pr * TILE + 2, TILE - 4, TILE - 4);
+      const q = n === 0 ? ['Hors de portée', '#e4572e'] : n <= vm.max * 0.3 ? ['Faible', '#e0a526'] : n <= vm.max * 0.65 ? ['Correct', '#c9d68a'] : ['Excellent', '#8fcf7a'];
+      tip = { cx, cy, row, txt: `${n} cases couvertes · ${q[0]}`, color: q[1] };
     }
 
     for (const t of this.towers) {
@@ -737,6 +801,15 @@ class Game {
     for (const f of this.floaters) { ctx.fillStyle = `rgba(226,176,74,${Math.min(1, f.t / 0.5)})`; ctx.fillText('+' + f.v, f.x, f.y - 12 - (0.8 - f.t) * 28); }
     ctx.textAlign = 'start';
 
+    if (tip) { // bulle d'information : valeur de l'emplacement survolé
+      ctx.font = 'bold 12px system-ui';
+      const tw = ctx.measureText(tip.txt).width + 16;
+      const lx = Math.min(W - tw - 4, Math.max(4, tip.cx - tw / 2)), ly = tip.row === 0 ? tip.cy + 30 : tip.cy - 46;
+      ctx.fillStyle = 'rgba(13,22,25,0.93)'; ctx.strokeStyle = tip.color; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(lx, ly, tw, 22, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = tip.color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(tip.txt, lx + 8, ly + 11); ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    }
     if (this.showHeat && this.lastHeat) { // carte de chaleur de la dernière vague
       const max = Math.max(1, ...Object.values(this.lastHeat));
       for (const [k, n] of Object.entries(this.lastHeat)) { const [c, r] = k.split(',').map(Number); ctx.fillStyle = `rgba(228,87,46,${0.15 + 0.55 * n / max})`; ctx.fillRect(c * TILE, r * TILE, TILE, TILE); }
@@ -768,7 +841,12 @@ function drawMapPreview(canvas, id) {
   ctx.scale(k, k);
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if ((c + r) % 2) ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
-  (MAPS[id].obstacles || []).forEach(([c1, r1, c2, r2, kind]) => { ctx.fillStyle = kind === 'water' ? '#264a63' : '#3a4144'; ctx.fillRect(c1 * TILE, r1 * TILE, (c2 - c1 + 1) * TILE, (r2 - r1 + 1) * TILE); });
+  computeObst(id).forEach((kind, k) => {
+    const [c, r] = k.split(',').map(Number), x = c * TILE, y = r * TILE;
+    if (kind === 'tree') { ctx.fillStyle = '#1f3a2a'; ctx.beginPath(); ctx.arc(x + 24, y + 24, 18, 0, 7); ctx.fill(); }
+    else if (kind === 'ruin') { ctx.fillStyle = '#5c6663'; ctx.fillRect(x + 10, y + 16, 28, 16); }
+    else { ctx.fillStyle = kind === 'water' ? '#264a63' : '#3a4144'; ctx.fillRect(x, y, TILE, TILE); }
+  });
   const route = (w, col) => {
     ctx.beginPath();
     W.forEach(([x, y], i) => { const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });

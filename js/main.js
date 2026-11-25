@@ -116,6 +116,7 @@ function startGame(id) {
       title1: 'Pour bien commencer', weaknesses: [],
       observations: [
         'Choisissez une tour sous le plateau (touches 1, 2, 3), puis cliquez sur une case verte pour la poser.',
+        "Survolez une case : une bulle indique combien de cases du chemin la tour couvrirait. Les cases sombres sont peu utiles, un point doré marque les meilleurs emplacements.",
         "Quand vous êtes prêt, cliquez sur « Lancer la vague » (ou appuyez sur la barre d'espace).",
         "Les ennemis suivent la route. S'ils arrivent au bout, vous perdez des vies : à zéro, c'est fini.",
         "Cliquez sur une tour pour l'améliorer. Après chaque vague, l'IA analyse votre façon de jouer : lisez son dossier à droite."
